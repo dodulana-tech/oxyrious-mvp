@@ -6,7 +6,8 @@ import { Card, MetricCard } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Alert } from "@/components/ui/alert";
 import { Btn } from "@/components/ui/button";
-import { Input } from "@/components/ui/form";
+import { Input, Select, FormGroup } from "@/components/ui/form";
+import { Modal } from "@/components/ui/modal";
 
 interface Gas {
   id: number;
@@ -25,6 +26,24 @@ interface Hospital {
   markup: number;
 }
 
+interface GasForm {
+  name: string;
+  category: string;
+  price: string;
+  stock: string;
+  minStock: string;
+  source: string;
+}
+
+const emptyForm: GasForm = {
+  name: "",
+  category: "OXYGEN",
+  price: "",
+  stock: "",
+  minStock: "",
+  source: "ISLAND",
+};
+
 const catColor: Record<string, "green" | "amber" | "blue" | "gray"> = {
   OXYGEN: "green",
   ANAESTHETIC: "amber",
@@ -37,14 +56,140 @@ export default function InventoryPage() {
   const [editingMarkup, setEditingMarkup] = useState<Record<number, number>>({});
   const [savingMarkup, setSavingMarkup] = useState<number | null>(null);
 
+  // Gas product modal state
+  const [productModal, setProductModal] = useState(false);
+  const [editingGas, setEditingGas] = useState<Gas | null>(null);
+  const [form, setForm] = useState<GasForm>(emptyForm);
+  const [saving, setSaving] = useState(false);
+
+  // Stock adjustment modal state
+  const [stockModal, setStockModal] = useState(false);
+  const [stockGas, setStockGas] = useState<Gas | null>(null);
+  const [stockDelta, setStockDelta] = useState("");
+
+  // Delete confirmation
+  const [deleteId, setDeleteId] = useState<number | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
   useEffect(() => {
-    fetch("/api/gases")
-      .then((r) => r.json())
-      .then(setGases);
+    fetchGases();
     fetch("/api/hospitals")
       .then((r) => r.json())
       .then((data: Hospital[]) => setHospitals(Array.isArray(data) ? data : []));
   }, []);
+
+  const fetchGases = () => {
+    fetch("/api/gases")
+      .then((r) => r.json())
+      .then(setGases);
+  };
+
+  // --- Product modal helpers ---
+  const openAddModal = () => {
+    setEditingGas(null);
+    setForm(emptyForm);
+    setProductModal(true);
+  };
+
+  const openEditModal = (g: Gas) => {
+    setEditingGas(g);
+    setForm({
+      name: g.name,
+      category: g.category,
+      price: String(g.price),
+      stock: String(g.stock),
+      minStock: String(g.minStock),
+      source: g.source,
+    });
+    setProductModal(true);
+  };
+
+  const closeProductModal = () => {
+    setProductModal(false);
+    setEditingGas(null);
+    setForm(emptyForm);
+  };
+
+  const handleFormChange = (field: keyof GasForm, value: string) => {
+    setForm((p) => ({ ...p, [field]: value }));
+  };
+
+  const submitProduct = async () => {
+    setSaving(true);
+    const body = {
+      name: form.name,
+      category: form.category,
+      price: parseFloat(form.price) || 0,
+      stock: parseFloat(form.stock) || 0,
+      minStock: parseFloat(form.minStock) || 0,
+      source: form.source,
+    };
+    try {
+      const url = editingGas ? `/api/gases/${editingGas.id}` : "/api/gases";
+      const method = editingGas ? "PUT" : "POST";
+      const res = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      if (res.ok) {
+        fetchGases();
+        closeProductModal();
+      }
+    } catch (err) {
+      console.error("Failed to save product", err);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // --- Delete ---
+  const confirmDelete = async () => {
+    if (deleteId === null) return;
+    setDeleting(true);
+    try {
+      const res = await fetch(`/api/gases/${deleteId}`, { method: "DELETE" });
+      if (res.ok) {
+        setGases((p) => p.filter((g) => g.id !== deleteId));
+        setDeleteId(null);
+      }
+    } catch (err) {
+      console.error("Failed to delete product", err);
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  // --- Stock adjustment ---
+  const openStockModal = (g: Gas) => {
+    setStockGas(g);
+    setStockDelta("");
+    setStockModal(true);
+  };
+
+  const submitStockAdjustment = async () => {
+    if (!stockGas) return;
+    const delta = parseFloat(stockDelta) || 0;
+    if (delta === 0) return;
+    const newStock = Math.max(0, stockGas.stock + delta);
+    setSaving(true);
+    try {
+      const res = await fetch(`/api/gases/${stockGas.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ stock: newStock }),
+      });
+      if (res.ok) {
+        fetchGases();
+        setStockModal(false);
+        setStockGas(null);
+      }
+    } catch (err) {
+      console.error("Failed to adjust stock", err);
+    } finally {
+      setSaving(false);
+    }
+  };
 
   // Reference gas: first OXYGEN product for effective price display
   const refGas = gases.find((g) => g.category === "OXYGEN");
@@ -99,12 +244,17 @@ export default function InventoryPage() {
           />
         </div>
 
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="font-display font-bold text-sm">Gas Products</h2>
+          <Btn size="sm" onClick={openAddModal}>+ Add product</Btn>
+        </div>
+
         <Card noPad>
           <div className="overflow-x-auto">
             <table className="w-full border-collapse">
               <thead>
                 <tr>
-                  {["Product", "Category", "Unit price", "Stock", "Level", "Source"].map((h) => (
+                  {["Product", "Category", "Unit price", "Stock", "Level", "Source", "Actions"].map((h) => (
                     <th
                       key={h}
                       className="text-left text-[10px] uppercase tracking-wider text-text-muted p-2.5 border-b border-border font-medium"
@@ -145,9 +295,23 @@ export default function InventoryPage() {
                           {g.source === "ISLAND" ? "Island partner" : "Mainland"}
                         </Badge>
                       </td>
+                      <td className="p-2.5">
+                        <div className="flex gap-1">
+                          <Btn size="sm" variant="ghost" onClick={() => openStockModal(g)}>+/- Stock</Btn>
+                          <Btn size="sm" variant="ghost" onClick={() => openEditModal(g)}>Edit</Btn>
+                          <Btn size="sm" variant="danger" onClick={() => setDeleteId(g.id)}>Delete</Btn>
+                        </div>
+                      </td>
                     </tr>
                   );
                 })}
+                {gases.length === 0 && (
+                  <tr>
+                    <td colSpan={7} className="p-4 text-center text-text-muted text-xs">
+                      No gas products found
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
@@ -259,6 +423,109 @@ export default function InventoryPage() {
           </Card>
         </div>
       </div>
+
+      {/* Add / Edit Gas Product Modal */}
+      <Modal open={productModal} onClose={closeProductModal} title={editingGas ? "Edit product" : "Add product"}>
+        <div className="space-y-0">
+          <FormGroup label="Product name">
+            <Input
+              value={form.name}
+              onChange={(e) => handleFormChange("name", e.target.value)}
+              placeholder="e.g. Medical Oxygen (50L)"
+            />
+          </FormGroup>
+          <FormGroup label="Category">
+            <Select value={form.category} onChange={(e) => handleFormChange("category", e.target.value)}>
+              <option value="OXYGEN">Oxygen</option>
+              <option value="ANAESTHETIC">Anaesthetic</option>
+              <option value="SPECIALTY">Specialty</option>
+            </Select>
+          </FormGroup>
+          <div className="grid grid-cols-3 gap-3">
+            <FormGroup label="Unit price (₦)">
+              <Input
+                type="number"
+                value={form.price}
+                onChange={(e) => handleFormChange("price", e.target.value)}
+                placeholder="0"
+              />
+            </FormGroup>
+            <FormGroup label="Stock">
+              <Input
+                type="number"
+                value={form.stock}
+                onChange={(e) => handleFormChange("stock", e.target.value)}
+                placeholder="0"
+              />
+            </FormGroup>
+            <FormGroup label="Min stock">
+              <Input
+                type="number"
+                value={form.minStock}
+                onChange={(e) => handleFormChange("minStock", e.target.value)}
+                placeholder="0"
+              />
+            </FormGroup>
+          </div>
+          <FormGroup label="Source region">
+            <Select value={form.source} onChange={(e) => handleFormChange("source", e.target.value)}>
+              <option value="ISLAND">Island</option>
+              <option value="MAINLAND">Mainland</option>
+            </Select>
+          </FormGroup>
+          <div className="flex justify-end gap-2 pt-2">
+            <Btn size="sm" variant="ghost" onClick={closeProductModal}>Cancel</Btn>
+            <Btn size="sm" onClick={submitProduct} disabled={saving || !form.name.trim()}>
+              {saving ? "Saving..." : editingGas ? "Update product" : "Add product"}
+            </Btn>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Stock Adjustment Modal */}
+      <Modal open={stockModal} onClose={() => { setStockModal(false); setStockGas(null); }} title="Adjust stock">
+        {stockGas && (
+          <div>
+            <div className="text-xs text-text-muted mb-3">
+              <strong>{stockGas.name}</strong> — Current stock: <strong>{stockGas.stock.toLocaleString()}</strong>
+            </div>
+            <FormGroup label="Adjustment (use negative to subtract)">
+              <Input
+                type="number"
+                value={stockDelta}
+                onChange={(e) => setStockDelta(e.target.value)}
+                placeholder="e.g. 10 or -5"
+              />
+            </FormGroup>
+            {stockDelta && (
+              <div className="text-[11px] text-text-muted mb-3">
+                New stock will be: <strong>{Math.max(0, stockGas.stock + (parseFloat(stockDelta) || 0)).toLocaleString()}</strong>
+              </div>
+            )}
+            <div className="flex justify-end gap-2 pt-2">
+              <Btn size="sm" variant="ghost" onClick={() => { setStockModal(false); setStockGas(null); }}>Cancel</Btn>
+              <Btn size="sm" onClick={submitStockAdjustment} disabled={saving || !stockDelta}>
+                {saving ? "Saving..." : "Update stock"}
+              </Btn>
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      {/* Delete Confirmation Modal */}
+      <Modal open={deleteId !== null} onClose={() => setDeleteId(null)} title="Delete product">
+        <div>
+          <p className="text-xs text-text-muted mb-4">
+            Are you sure you want to delete <strong>{gases.find((g) => g.id === deleteId)?.name}</strong>? This action cannot be undone.
+          </p>
+          <div className="flex justify-end gap-2">
+            <Btn size="sm" variant="ghost" onClick={() => setDeleteId(null)}>Cancel</Btn>
+            <Btn size="sm" variant="danger" onClick={confirmDelete} disabled={deleting}>
+              {deleting ? "Deleting..." : "Delete"}
+            </Btn>
+          </div>
+        </div>
+      </Modal>
     </>
   );
 }

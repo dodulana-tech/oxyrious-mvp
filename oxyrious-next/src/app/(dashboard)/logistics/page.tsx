@@ -4,6 +4,9 @@ import { useState, useEffect } from "react";
 import { Header } from "@/components/layout/header";
 import { Card, MetricCard } from "@/components/ui/card";
 import { Badge, StatusBadge } from "@/components/ui/badge";
+import { Modal } from "@/components/ui/modal";
+import { Btn } from "@/components/ui/button";
+import { FormGroup, Input } from "@/components/ui/form";
 import { fmtFull } from "@/lib/utils";
 
 interface Transporter {
@@ -33,11 +36,21 @@ interface Order {
   transporter: { name: string } | null;
 }
 
+const emptyForm = { name: "", driver: "", phone: "" };
+
 export default function LogisticsPage() {
   const [transporters, setTransporters] = useState<Transporter[]>([]);
   const [activeDeliveries, setActiveDeliveries] = useState<Order[]>([]);
 
-  useEffect(() => {
+  const [formOpen, setFormOpen] = useState(false);
+  const [editing, setEditing] = useState<Transporter | null>(null);
+  const [form, setForm] = useState(emptyForm);
+  const [saving, setSaving] = useState(false);
+
+  const [deleteTarget, setDeleteTarget] = useState<Transporter | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
+  const loadData = () => {
     Promise.all([
       fetch("/api/transporters").then((r) => r.json()),
       fetch("/api/orders?status=DISPATCHED").then((r) => r.json()),
@@ -46,7 +59,68 @@ export default function LogisticsPage() {
       setTransporters(t);
       setActiveDeliveries([...dispatched, ...inTransit]);
     });
+  };
+
+  useEffect(() => {
+    loadData();
   }, []);
+
+  /* ---- modal helpers ---- */
+
+  const openAdd = () => {
+    setEditing(null);
+    setForm(emptyForm);
+    setFormOpen(true);
+  };
+
+  const openEdit = (t: Transporter) => {
+    setEditing(t);
+    setForm({ name: t.name, driver: t.driver, phone: t.phone });
+    setFormOpen(true);
+  };
+
+  const closeForm = () => {
+    setFormOpen(false);
+    setEditing(null);
+    setForm(emptyForm);
+  };
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      if (editing) {
+        await fetch(`/api/transporters/${editing.id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(form),
+        });
+      } else {
+        await fetch("/api/transporters", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(form),
+        });
+      }
+      closeForm();
+      loadData();
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    try {
+      await fetch(`/api/transporters/${deleteTarget.id}`, { method: "DELETE" });
+      setDeleteTarget(null);
+      loadData();
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  /* ---- derived metrics ---- */
 
   const activeTransporters = transporters.filter((t) => t.activeCount > 0).length;
   const avgOnTime =
@@ -82,7 +156,12 @@ export default function LogisticsPage() {
         <div className="grid grid-cols-2 gap-3.5">
           {/* Transporters */}
           <div>
-            <div className="font-display text-[13px] font-bold mb-3">Transporters</div>
+            <div className="flex items-center justify-between mb-3">
+              <div className="font-display text-[13px] font-bold">Transporters</div>
+              <Btn variant="primary" size="sm" onClick={openAdd}>
+                + Add transporter
+              </Btn>
+            </div>
             <div className="flex flex-col gap-2.5">
               {transporters.map((t) => (
                 <Card key={t.id}>
@@ -109,11 +188,19 @@ export default function LogisticsPage() {
                       </div>
                     </div>
                   </div>
-                  <div className="bg-bg rounded-sm h-1 overflow-hidden">
+                  <div className="bg-bg rounded-sm h-1 overflow-hidden mb-2.5">
                     <div
                       className={`h-full rounded-sm ${t.onTimeRate >= 90 ? "bg-emerald-500" : "bg-amber-500"}`}
                       style={{ width: `${t.onTimeRate}%` }}
                     />
+                  </div>
+                  <div className="flex gap-2">
+                    <Btn variant="ghost" size="sm" onClick={() => openEdit(t)}>
+                      Edit
+                    </Btn>
+                    <Btn variant="danger" size="sm" onClick={() => setDeleteTarget(t)}>
+                      Delete
+                    </Btn>
                   </div>
                 </Card>
               ))}
@@ -148,6 +235,61 @@ export default function LogisticsPage() {
           </div>
         </div>
       </div>
+
+      {/* Add / Edit transporter modal */}
+      <Modal open={formOpen} onClose={closeForm} title={editing ? "Edit transporter" : "Add transporter"}>
+        <div className="flex flex-col gap-3">
+          <FormGroup label="Name">
+            <Input
+              value={form.name}
+              onChange={(e) => setForm({ ...form, name: e.target.value })}
+              placeholder="Transporter name"
+            />
+          </FormGroup>
+          <FormGroup label="Driver">
+            <Input
+              value={form.driver}
+              onChange={(e) => setForm({ ...form, driver: e.target.value })}
+              placeholder="Driver name"
+            />
+          </FormGroup>
+          <FormGroup label="Phone">
+            <Input
+              value={form.phone}
+              onChange={(e) => setForm({ ...form, phone: e.target.value })}
+              placeholder="Phone number"
+            />
+          </FormGroup>
+          <div className="flex justify-end gap-2 mt-2">
+            <Btn variant="ghost" size="md" onClick={closeForm}>
+              Cancel
+            </Btn>
+            <Btn
+              variant="primary"
+              size="md"
+              onClick={handleSave}
+              disabled={saving || !form.name.trim() || !form.driver.trim() || !form.phone.trim()}
+            >
+              {saving ? "Saving..." : editing ? "Update" : "Add"}
+            </Btn>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Delete confirmation modal */}
+      <Modal open={!!deleteTarget} onClose={() => setDeleteTarget(null)} title="Delete transporter">
+        <p className="text-sm text-text-muted mb-4">
+          Are you sure you want to delete <strong>{deleteTarget?.name}</strong>? This action cannot be undone.
+        </p>
+        <div className="flex justify-end gap-2">
+          <Btn variant="ghost" size="md" onClick={() => setDeleteTarget(null)}>
+            Cancel
+          </Btn>
+          <Btn variant="danger" size="md" onClick={handleDelete} disabled={deleting}>
+            {deleting ? "Deleting..." : "Delete"}
+          </Btn>
+        </div>
+      </Modal>
     </>
   );
 }

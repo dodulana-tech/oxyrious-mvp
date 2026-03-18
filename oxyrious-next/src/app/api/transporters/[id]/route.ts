@@ -44,3 +44,17 @@ export async function PUT(req: NextRequest, { params }: Params) {
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
+
+export async function DELETE(_req: NextRequest, { params }: Params) {
+  try {
+    const session = await auth();
+    if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    const { id } = await params;
+    await prisma.transporter.delete({ where: { id: Number(id) } });
+    return new NextResponse(null, { status: 204 });
+  } catch (err) {
+    console.error("DELETE /api/transporters/[id] error:", err);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
+}

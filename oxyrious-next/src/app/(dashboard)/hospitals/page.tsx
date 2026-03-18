@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Plus, Settings } from "lucide-react";
+import { Plus, Settings, Pencil } from "lucide-react";
 import { Header } from "@/components/layout/header";
 import { Card } from "@/components/ui/card";
 import { Btn } from "@/components/ui/button";
@@ -55,6 +55,8 @@ export default function HospitalsPage() {
     walletMinimum: 200000,
     discount: 0,
   });
+  const [editData, setEditData] = useState({ name: "", contact: "", phone: "", area: "" });
+  const [editSaving, setEditSaving] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -175,6 +177,32 @@ export default function HospitalsPage() {
     }
   };
 
+  const openEditModal = () => {
+    if (!sc) return;
+    setEditData({ name: sc.name, contact: sc.contact, phone: sc.phone, area: sc.area });
+    setModal("edit");
+  };
+
+  const editHospital = async () => {
+    if (!sc) return;
+    setEditSaving(true);
+    try {
+      const res = await fetch(`/api/hospitals/${sc.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(editData),
+      });
+      if (res.ok) {
+        setHospitals((p) => p.map((h) => (h.id === sc.id ? { ...h, ...editData } : h)));
+        setModal(null);
+      }
+    } catch (err) {
+      console.error("Failed to update hospital details", err);
+    } finally {
+      setEditSaving(false);
+    }
+  };
+
   if (loading) {
     return (
       <>
@@ -256,11 +284,17 @@ export default function HospitalsPage() {
           {sc && (
             <DetailPanel>
               <Card>
-                <div className="flex justify-between mb-2.5">
+                <div className="flex justify-between items-center mb-2.5">
                   <span className="font-display font-bold text-[13px]">{sc.name}</span>
-                  <Btn size="sm" variant="ghost" onClick={() => setSelected(null)}>
-                    ✕
-                  </Btn>
+                  <div className="flex items-center gap-1">
+                    <Btn size="sm" variant="ghost" onClick={openEditModal}>
+                      <Pencil size={11} />
+                      Edit
+                    </Btn>
+                    <Btn size="sm" variant="ghost" onClick={() => setSelected(null)}>
+                      ✕
+                    </Btn>
+                  </div>
                 </div>
                 <div className="text-[11.5px] text-text-muted mb-0.5">
                   {sc.contact} · {sc.phone}
@@ -522,6 +556,45 @@ export default function HospitalsPage() {
             </Btn>
             <Btn onClick={addHospital} disabled={!newClient.name}>
               Add hospital
+            </Btn>
+          </div>
+        </Modal>
+        {/* Edit hospital modal */}
+        <Modal open={modal === "edit" && !!sc} onClose={() => setModal(null)} title={`Edit hospital — ${sc?.name || ""}`} width="max-w-sm">
+          <FormGroup label="Hospital name">
+            <Input
+              value={editData.name}
+              onChange={(e) => setEditData((p) => ({ ...p, name: e.target.value }))}
+              placeholder="e.g. Lekki Health Centre"
+            />
+          </FormGroup>
+          <FormGroup label="Contact email">
+            <Input
+              value={editData.contact}
+              onChange={(e) => setEditData((p) => ({ ...p, contact: e.target.value }))}
+              placeholder="contact@hospital.com"
+            />
+          </FormGroup>
+          <FormGroup label="Phone">
+            <Input
+              value={editData.phone}
+              onChange={(e) => setEditData((p) => ({ ...p, phone: e.target.value }))}
+              placeholder="0801 234 5678"
+            />
+          </FormGroup>
+          <FormGroup label="Area">
+            <Input
+              value={editData.area}
+              onChange={(e) => setEditData((p) => ({ ...p, area: e.target.value }))}
+              placeholder="Lekki Phase 1"
+            />
+          </FormGroup>
+          <div className="flex gap-2 justify-end">
+            <Btn variant="ghost" onClick={() => setModal(null)}>
+              Cancel
+            </Btn>
+            <Btn onClick={editHospital} disabled={editSaving || !editData.name}>
+              {editSaving ? "Saving..." : "Save changes"}
             </Btn>
           </div>
         </Modal>

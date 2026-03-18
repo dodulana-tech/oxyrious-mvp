@@ -7,6 +7,9 @@ import { Table, Th, Tr, Td } from "@/components/ui/table";
 import { StatusBadge } from "@/components/ui/badge";
 import { Alert } from "@/components/ui/alert";
 import { RefCode } from "@/components/ui/detail-panel";
+import { Modal } from "@/components/ui/modal";
+import { Btn } from "@/components/ui/button";
+import { FormGroup, Input, Select } from "@/components/ui/form";
 import { fmt, fmtFull } from "@/lib/utils";
 
 interface Hospital {
@@ -33,8 +36,12 @@ export default function ReferralsPage() {
   const [hospitals, setHospitals] = useState<Hospital[]>([]);
   const [referrals, setReferrals] = useState<Referral[]>([]);
   const [tab, setTab] = useState("all");
+  const [showCreate, setShowCreate] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const [actionLoading, setActionLoading] = useState<number | null>(null);
+  const [form, setForm] = useState({ referrerId: "", referred: "", code: "" });
 
-  useEffect(() => {
+  const loadData = () =>
     Promise.all([
       fetch("/api/hospitals").then((r) => r.json()),
       fetch("/api/referrals").then((r) => r.json()).catch(() => []),
@@ -42,6 +49,9 @@ export default function ReferralsPage() {
       setHospitals(h);
       setReferrals(r);
     });
+
+  useEffect(() => {
+    loadData();
   }, []);
 
   const filtered = tab === "all" ? referrals : referrals.filter((r) => r.status === tab.toUpperCase());
@@ -52,6 +62,44 @@ export default function ReferralsPage() {
       return new Date(d).toLocaleDateString("en-NG", { month: "short", day: "numeric", year: "numeric" });
     } catch {
       return d;
+    }
+  };
+
+  const updateStatus = async (id: number, status: string) => {
+    setActionLoading(id);
+    try {
+      const res = await fetch(`/api/referrals/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status }),
+      });
+      if (res.ok) await loadData();
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleCreate = async () => {
+    if (!form.referrerId || !form.referred || !form.code) return;
+    setCreating(true);
+    try {
+      const res = await fetch("/api/referrals", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          referrerId: Number(form.referrerId),
+          referred: form.referred,
+          code: form.code,
+          date: new Date().toISOString(),
+        }),
+      });
+      if (res.ok) {
+        await loadData();
+        setForm({ referrerId: "", referred: "", code: "" });
+        setShowCreate(false);
+      }
+    } finally {
+      setCreating(false);
     }
   };
 
@@ -84,19 +132,24 @@ export default function ReferralsPage() {
           </span>
         </Alert>
 
-        {/* Tabs */}
-        <div className="flex border-b border-border mb-3.5">
-          {["all", "qualified", "active", "pending"].map((t) => (
-            <button
-              key={t}
-              onClick={() => setTab(t)}
-              className={`px-4 py-2 text-xs font-medium cursor-pointer border-b-2 -mb-px transition-all bg-transparent capitalize ${
-                tab === t ? "text-brand border-brand" : "text-text-muted border-transparent hover:text-text-secondary"
-              }`}
-            >
-              {t}
-            </button>
-          ))}
+        {/* Tabs + Add referral */}
+        <div className="flex items-center justify-between border-b border-border mb-3.5">
+          <div className="flex">
+            {["all", "qualified", "active", "pending"].map((t) => (
+              <button
+                key={t}
+                onClick={() => setTab(t)}
+                className={`px-4 py-2 text-xs font-medium cursor-pointer border-b-2 -mb-px transition-all bg-transparent capitalize ${
+                  tab === t ? "text-brand border-brand" : "text-text-muted border-transparent hover:text-text-secondary"
+                }`}
+              >
+                {t}
+              </button>
+            ))}
+          </div>
+          <Btn variant="purple" size="sm" onClick={() => setShowCreate(true)}>
+            + Add referral
+          </Btn>
         </div>
 
         <Card noPad className="mb-4">
@@ -110,6 +163,7 @@ export default function ReferralsPage() {
                 <Th>Orders placed</Th>
                 <Th>Reward</Th>
                 <Th>Date</Th>
+                <Th>Actions</Th>
               </tr>
             </thead>
             <tbody>
@@ -133,6 +187,28 @@ export default function ReferralsPage() {
                     </span>
                   </Td>
                   <Td className="text-text-muted text-[11.5px]">{dateFormatted(r.date)}</Td>
+                  <Td>
+                    {r.status === "PENDING" && (
+                      <Btn
+                        variant="primary"
+                        size="sm"
+                        disabled={actionLoading === r.id}
+                        onClick={() => updateStatus(r.id, "ACTIVE")}
+                      >
+                        {actionLoading === r.id ? "..." : "Approve"}
+                      </Btn>
+                    )}
+                    {r.status === "ACTIVE" && r.orderCount >= 3 && (
+                      <Btn
+                        variant="purple"
+                        size="sm"
+                        disabled={actionLoading === r.id}
+                        onClick={() => updateStatus(r.id, "QUALIFIED")}
+                      >
+                        {actionLoading === r.id ? "..." : "Qualify"}
+                      </Btn>
+                    )}
+                  </Td>
                 </Tr>
               ))}
             </tbody>
@@ -158,6 +234,46 @@ export default function ReferralsPage() {
           ))}
         </div>
       </div>
+
+      {/* Create Referral Modal */}
+      <Modal open={showCreate} onClose={() => setShowCreate(false)} title="Add referral">
+        <FormGroup label="Referrer">
+          <Select value={form.referrerId} onChange={(e) => setForm({ ...form, referrerId: e.target.value })}>
+            <option value="">Select hospital...</option>
+            {hospitals.map((h) => (
+              <option key={h.id} value={h.id}>
+                {h.name}
+              </option>
+            ))}
+          </Select>
+        </FormGroup>
+        <FormGroup label="Referred hospital name">
+          <Input
+            placeholder="Hospital name"
+            value={form.referred}
+            onChange={(e) => setForm({ ...form, referred: e.target.value })}
+          />
+        </FormGroup>
+        <FormGroup label="Code used">
+          <Input
+            placeholder="Referral code"
+            value={form.code}
+            onChange={(e) => setForm({ ...form, code: e.target.value })}
+          />
+        </FormGroup>
+        <div className="flex justify-end gap-2 mt-4">
+          <Btn variant="ghost" onClick={() => setShowCreate(false)}>
+            Cancel
+          </Btn>
+          <Btn
+            variant="primary"
+            disabled={creating || !form.referrerId || !form.referred || !form.code}
+            onClick={handleCreate}
+          >
+            {creating ? "Saving..." : "Create referral"}
+          </Btn>
+        </div>
+      </Modal>
     </>
   );
 }
