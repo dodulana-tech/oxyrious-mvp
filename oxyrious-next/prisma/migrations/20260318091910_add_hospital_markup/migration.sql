@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "Hospital" ADD COLUMN     "markup" DOUBLE PRECISION NOT NULL DEFAULT 0;

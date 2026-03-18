@@ -1,0 +1,233 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── Enums ──────────────────────────────────────────────────────────
+
+enum PaymentMode {
+  WALLET
+  CREDIT
+  CASH
+  TRANSFER
+}
+
+enum OrderStatus {
+  PENDING
+  DISPATCHED
+  IN_TRANSIT
+  DELIVERED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PAID
+  PENDING
+  AWAITING
+  OVERDUE
+}
+
+enum GasCategory {
+  OXYGEN
+  ANAESTHETIC
+  SPECIALTY
+}
+
+enum SourceRegion {
+  ISLAND
+  MAINLAND
+}
+
+enum InvoiceStatus {
+  CURRENT
+  AWAITING
+  OVERDUE
+  PAID
+}
+
+enum ReferralStatus {
+  PENDING
+  ACTIVE
+  QUALIFIED
+}
+
+enum UserRole {
+  ADMIN
+  STAFF
+  HOSPITAL
+}
+
+// ─── Auth ───────────────────────────────────────────────────────────
+
+model User {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  name         String
+  passwordHash String
+  role         UserRole  @default(STAFF)
+  hospitalId   Int?
+  hospital     Hospital? @relation(fields: [hospitalId], references: [id])
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}
+
+// ─── Domain Models ──────────────────────────────────────────────────
+
+model Hospital {
+  id             Int         @id @default(autoincrement())
+  name           String
+  contact        String
+  phone          String
+  area           String
+  paymentMode    PaymentMode @default(CASH)
+  walletBalance  Float       @default(0)
+  walletMinimum  Float       @default(0)
+  creditScore    Int         @default(45)
+  tier           Int         @default(1)
+  dso            Int         @default(0)
+  orderCount     Int         @default(0)
+  discount       Float       @default(0)
+  markup         Float       @default(0) // Pricing markup %. Positive = surcharge, negative = discount. Effective price = Gas.price * (1 + markup/100)
+  streak         Int         @default(0)
+  refCode        String      @unique
+  referralCount  Int         @default(0)
+  refReward      Float       @default(0)
+  milestone      Boolean     @default(false)
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  orders              Order[]
+  receivables         Receivable[]
+  referralsGiven      Referral[]          @relation("Referrer")
+  users               User[]
+  walletTransactions  WalletTransaction[]
+
+  @@index([paymentMode])
+  @@index([area])
+}
+
+model Gas {
+  id       Int          @id @default(autoincrement())
+  name     String
+  category GasCategory
+  price    Float
+  stock    Float
+  minStock Float
+  source   SourceRegion
+
+  orderItems OrderItem[]
+
+  @@index([category])
+}
+
+model Transporter {
+  id          Int    @id @default(autoincrement())
+  name        String
+  driver      String
+  phone       String
+  deliveries  Int    @default(0)
+  onTimeRate  Float  @default(0)
+  activeCount Int    @default(0)
+
+  orders Order[]
+}
+
+model Order {
+  id            String        @id
+  hospitalId    Int
+  hospital      Hospital      @relation(fields: [hospitalId], references: [id])
+  total         Float
+  status        OrderStatus   @default(PENDING)
+  paymentMode   PaymentMode
+  payStatus     PaymentStatus @default(AWAITING)
+  transporterId Int?
+  transporter   Transporter?  @relation(fields: [transporterId], references: [id])
+  source        SourceRegion  @default(ISLAND)
+  date          DateTime
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  items OrderItem[]
+
+  @@index([hospitalId])
+  @@index([status])
+  @@index([payStatus])
+  @@index([date])
+}
+
+model OrderItem {
+  id       Int    @id @default(autoincrement())
+  orderId  String
+  order    Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  gasId    Int
+  gas      Gas    @relation(fields: [gasId], references: [id])
+  quantity Int
+  price    Float
+
+  @@index([orderId])
+}
+
+model Receivable {
+  id          String        @id
+  hospitalId  Int
+  hospital    Hospital      @relation(fields: [hospitalId], references: [id])
+  amount      Float
+  dueDate     DateTime
+  daysOverdue Int           @default(0)
+  status      InvoiceStatus @default(CURRENT)
+  reminders   Int           @default(0)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@index([hospitalId])
+  @@index([status])
+}
+
+model Referral {
+  id         Int            @id @default(autoincrement())
+  referrerId Int
+  referrer   Hospital       @relation("Referrer", fields: [referrerId], references: [id])
+  referred   String
+  code       String
+  status     ReferralStatus @default(PENDING)
+  orderCount Int            @default(0)
+  reward     Float          @default(0)
+  date       DateTime
+  createdAt  DateTime       @default(now())
+
+  @@index([referrerId])
+  @@index([code])
+}
+
+// ─── Wallet & Notifications ────────────────────────────────────────
+
+model WalletTransaction {
+  id         Int      @id @default(autoincrement())
+  hospitalId Int
+  hospital   Hospital @relation(fields: [hospitalId], references: [id])
+  type       String   // TOPUP, DEDUCTION, REFUND, REFERRAL_REWARD
+  amount     Float
+  reference  String?  // Paystack reference or order ID
+  note       String?
+  createdAt  DateTime @default(now())
+
+  @@index([hospitalId])
+}
+
+model Notification {
+  id         Int      @id @default(autoincrement())
+  hospitalId Int?
+  channel    String   // SMS, WHATSAPP, EMAIL
+  recipient  String   // phone or email
+  message    String
+  status     String   @default("PENDING") // PENDING, SENT, FAILED
+  reference  String?  // Termii message ID or Resend ID
+  createdAt  DateTime @default(now())
+
+  @@index([hospitalId])
+  @@index([status])
+}

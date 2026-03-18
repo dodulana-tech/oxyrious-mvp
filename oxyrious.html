@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Oxyrious</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0f172a;color:#f1f5f9;font-family:system-ui,-apple-system,sans-serif;font-size:13px;height:100vh;overflow:hidden}
+.layout{display:flex;height:100vh}
+.side{width:215px;min-width:215px;background:#1e293b;border-right:1px solid #334155;display:flex;flex-direction:column;overflow-y:auto}
+.logo{padding:16px 14px;border-bottom:1px solid #334155;display:flex;align-items:center;gap:10px}
+.logo-icon{width:34px;height:34px;background:#10b981;border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:14px;color:#0f172a;flex-shrink:0}
+.logo-name{font-size:13px;font-weight:700;line-height:1.3}
+.logo-sub{font-size:9px;color:#64748b;text-transform:uppercase;letter-spacing:.06em}
+.nav{padding:12px 8px}
+.nav-lbl{font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:#64748b;padding:0 8px;margin-bottom:5px;margin-top:10px}
+.nav-item{display:flex;align-items:center;justify-content:space-between;padding:8px 10px;border-radius:7px;cursor:pointer;color:#94a3b8;margin-bottom:2px;font-size:13px;transition:all .15s}
+.nav-item:hover{background:#334155;color:#f1f5f9}
+.nav-item.active{background:rgba(16,185,129,.12);color:#10b981;font-weight:500}
+.nb{background:#ef4444;color:#fff;font-size:9px;font-weight:700;padding:1px 6px;border-radius:20px}
+.nb-y{background:#f59e0b;color:#0f172a;font-size:9px;font-weight:700;padding:1px 6px;border-radius:20px}
+.nb-p{background:#8b5cf6;color:#fff;font-size:9px;font-weight:700;padding:1px 6px;border-radius:20px}
+.user-area{margin-top:auto;padding:10px;border-top:1px solid #334155}
+.user-chip{display:flex;align-items:center;gap:9px;padding:7px 9px;border-radius:7px;cursor:pointer}
+.user-chip:hover{background:#334155}
+.avatar{width:28px;height:28px;border-radius:50%;background:rgba(16,185,129,.15);border:1px solid rgba(16,185,129,.3);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#10b981}
+.main{flex:1;overflow-y:auto;display:flex;flex-direction:column;min-width:0}
+.topbar{padding:12px 20px;border-bottom:1px solid #334155;display:flex;align-items:center;background:#0f172a;position:sticky;top:0;z-index:10}
+.pg-title{font-size:17px;font-weight:700}
+.pg-sub{font-size:11px;color:#64748b;margin-top:1px}
+.content{padding:18px 20px}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:7px;font-size:12px;font-weight:500;cursor:pointer;border:none;font-family:inherit;transition:all .15s;white-space:nowrap}
+.btn-p{background:#10b981;color:#0f172a}.btn-p:hover{background:#059669}
+.btn-g{background:#1e293b;color:#f1f5f9;border:1px solid #334155}.btn-g:hover{background:#334155}
+.btn-v{background:rgba(139,92,246,.15);color:#8b5cf6;border:1px solid rgba(139,92,246,.2)}.btn-v:hover{background:rgba(139,92,246,.25)}
+.btn-sm{padding:4px 10px;font-size:11px}
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
+.metric{background:#1e293b;border:1px solid #334155;border-radius:10px;padding:14px 16px;border-top:2px solid transparent}
+.metric-lbl{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:#64748b;margin-bottom:6px}
+.metric-val{font-size:24px;font-weight:700;line-height:1;margin-bottom:4px}
+.metric-sub{font-size:11px;color:#64748b}
+.card{background:#1e293b;border:1px solid #334155;border-radius:10px}
+.card-head{padding:13px 16px;border-bottom:1px solid #334155;display:flex;align-items:center;justify-content:space-between}
+.card-title{font-size:13px;font-weight:600}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px}
+table{width:100%;border-collapse:collapse}
+th{text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:#64748b;padding:9px 13px;border-bottom:1px solid #334155;white-space:nowrap}
+td{padding:10px 13px;border-bottom:1px solid #334155;font-size:12.5px;vertical-align:middle}
+tr:last-child td{border:none}
+tbody tr:hover td{background:rgba(255,255,255,.02);cursor:pointer}
+.badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:20px;font-size:10.5px;font-weight:500;white-space:nowrap}
+.bg{background:rgba(16,185,129,.12);color:#10b981}.by{background:rgba(245,158,11,.12);color:#f59e0b}
+.br{background:rgba(239,68,68,.12);color:#ef4444}.bb{background:rgba(59,130,246,.12);color:#3b82f6}
+.bs{background:rgba(148,163,184,.1);color:#94a3b8}.bv{background:rgba(139,92,246,.12);color:#8b5cf6}
+.dot{width:5px;height:5px;border-radius:50%;background:currentColor;flex-shrink:0}
+.wbar{background:#0f172a;border-radius:3px;height:4px;overflow:hidden;margin-top:4px}
+.wfill{height:100%;border-radius:3px}
+.alert{padding:9px 13px;border-radius:8px;font-size:12px;display:flex;align-items:flex-start;gap:8px;margin-bottom:12px}
+.alert-r{background:rgba(239,68,68,.1);color:#ef4444;border:1px solid rgba(239,68,68,.2)}
+.alert-y{background:rgba(245,158,11,.1);color:#f59e0b;border:1px solid rgba(245,158,11,.2)}
+.alert-g{background:rgba(16,185,129,.1);color:#10b981;border:1px solid rgba(16,185,129,.2)}
+.alert-v{background:rgba(139,92,246,.1);color:#8b5cf6;border:1px solid rgba(139,92,246,.2)}
+.filters{display:flex;gap:7px;margin-bottom:14px;flex-wrap:wrap;align-items:center}
+.chip{padding:4px 12px;border-radius:20px;font-size:11.5px;cursor:pointer;border:1px solid #334155;background:transparent;color:#94a3b8;font-family:inherit;font-weight:500}
+.chip:hover{color:#f1f5f9;border-color:#475569}
+.chip.on{background:rgba(16,185,129,.12);border-color:rgba(16,185,129,.3);color:#10b981}
+.tabs{display:flex;border-bottom:1px solid #334155;margin-bottom:14px}
+.tab{padding:8px 16px;font-size:12px;font-weight:500;color:#94a3b8;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .15s}
+.tab:hover{color:#f1f5f9}
+.tab.on{color:#10b981;border-bottom-color:#10b981}
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.75);display:flex;align-items:center;justify-content:center;z-index:100;padding:20px}
+.modal{background:#1e293b;border:1px solid #475569;border-radius:12px;padding:20px;width:100%;max-width:480px;max-height:88vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+.modal-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:15px}
+.modal-title{font-size:15px;font-weight:700}
+.fg{margin-bottom:12px}
+label{display:block;font-size:10.5px;font-weight:500;color:#94a3b8;margin-bottom:5px;text-transform:uppercase;letter-spacing:.05em}
+input,select,textarea{width:100%;background:#0f172a;border:1px solid #475569;border-radius:7px;color:#f1f5f9;font-family:inherit;font-size:13px;padding:8px 11px;outline:none}
+input:focus,select:focus{border-color:#10b981;box-shadow:0 0 0 3px rgba(16,185,129,.1)}
+select option{background:#1e293b}
+.detail{width:240px;flex-shrink:0;display:flex;flex-direction:column;gap:10px}
+.dcard{background:#1e293b;border:1px solid #334155;border-radius:10px;padding:14px}
+.dtitle{font-size:12px;font-weight:600;margin-bottom:10px}
+.tl{padding-left:18px;position:relative}
+.tl::before{content:'';position:absolute;left:5px;top:0;bottom:0;width:1px;background:#334155}
+.tli{position:relative;padding-bottom:12px}
+.tli::before{content:'';position:absolute;left:-15px;top:4px;width:7px;height:7px;border-radius:50%;background:#1e293b;border:2px solid #475569}
+.tli.done::before{background:#10b981;border-color:#10b981}
+.tli.now::before{background:#f59e0b;border-color:#f59e0b}
+.ref-code{font-family:monospace;background:#0f172a;border:1px solid #334155;border-radius:6px;padding:6px 12px;font-size:14px;font-weight:700;letter-spacing:.12em;color:#10b981;display:inline-block}
+.score-ring{display:inline-flex;align-items:center;justify-content:center;width:48px;height:48px;border-radius:50%;border:3px solid;font-size:15px;font-weight:700;flex-shrink:0}
+.nudge-card{background:rgba(139,92,246,.08);border:1px solid rgba(139,92,246,.2);border-radius:10px;padding:14px 16px;margin-bottom:10px}
+.report-preview{background:#0f172a;border:1px solid #334155;border-radius:8px;padding:16px;font-size:12px;line-height:1.7}
+.kpi-row{display:flex;gap:10px;margin-bottom:12px}
+.kpi{flex:1;background:#1e293b;border:1px solid #334155;border-radius:8px;padding:10px 12px;text-align:center}
+.kpi-n{font-size:20px;font-weight:700;line-height:1;margin-bottom:3px}
+.kpi-l{font-size:10px;color:#64748b;text-transform:uppercase;letter-spacing:.05em}
+.growth-stat{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid #334155}
+.growth-stat:last-child{border:none}
+</style>
+</head>
+<body>
+<div class="layout">
+  <aside class="side">
+    <div class="logo">
+      <div class="logo-icon">Ox</div>
+      <div>
+        <div class="logo-name">Oxy<span style="color:#10b981">rious</span></div>
+        <div class="logo-sub">Medical Oxygen. Elevated.</div>
+      </div>
+    </div>
+    <div class="nav">
+      <div class="nav-lbl">Main</div>
+      <div class="nav-item active" id="nav-dashboard" onclick="go('dashboard')">Dashboard</div>
+      <div class="nav-item" id="nav-orders" onclick="go('orders')">Orders <span class="nb">2</span></div>
+      <div class="nav-item" id="nav-clients" onclick="go('clients')">Hospitals</div>
+      <div class="nav-item" id="nav-inventory" onclick="go('inventory')">Inventory <span class="nb-y">1</span></div>
+      <div class="nav-lbl">Operations</div>
+      <div class="nav-item" id="nav-logistics" onclick="go('logistics')">Logistics</div>
+      <div class="nav-item" id="nav-receivables" onclick="go('receivables')">Receivables <span class="nb">1</span></div>
+      <div class="nav-lbl">Growth</div>
+      <div class="nav-item" id="nav-growth" onclick="go('growth')">Growth Hub <span class="nb-p">NEW</span></div>
+      <div class="nav-item" id="nav-referrals" onclick="go('referrals')">Referrals</div>
+      <div class="nav-item" id="nav-reports" onclick="go('reports')">Supply Reports</div>
+    </div>
+    <div class="user-area">
+      <div class="user-chip">
+        <div class="avatar">AD</div>
+        <div><div style="font-size:12px;font-weight:500">Admin</div><div style="font-size:10px;color:#64748b">Oxyrious</div></div>
+      </div>
+    </div>
+  </aside>
+  <main class="main">
+    <div class="topbar">
+      <div>
+        <div class="pg-title" id="pg-title">Dashboard</div>
+        <div class="pg-sub" id="pg-sub">Welcome back, Admin</div>
+      </div>
+      <div style="margin-left:auto;display:flex;gap:8px">
+        <button class="btn btn-g" style="padding:7px 10px">&#128276;</button>
+        <button class="btn btn-g" style="padding:7px 10px">&#9881;</button>
+      </div>
+    </div>
+    <div class="content" id="content"></div>
+  </main>
+</div>
+<div id="modals"></div>
+<script>
+const H=[
+  {id:1,name:'Reddington Hospital',contact:'Chioma Eze',area:'Victoria Island',pm:'wallet',wb:820000,wmin:300000,score:94,tier:3,dso:0,orders:48,disc:5,streak:247,refCode:'OHP-RED1',refs:2,refReward:24000,walletMilestone:null},
+  {id:2,name:'EKO Hospital',contact:'Bola Adeyemi',area:'Surulere',pm:'credit',wb:0,wmin:0,score:81,tier:3,dso:24,orders:36,disc:0,streak:183,refCode:'OHP-EKO2',refs:1,refReward:9600,walletMilestone:null},
+  {id:3,name:'Lagoon Hospital',contact:'Emeka Obi',area:'Ikoyi',pm:'wallet',wb:95000,wmin:200000,score:88,tier:3,dso:0,orders:29,disc:3,streak:201,refCode:'OHP-LAG3',refs:0,refReward:0,walletMilestone:null},
+  {id:4,name:'St. Nicholas Hospital',contact:'Funke Adeoye',area:'Lagos Island',pm:'transfer',wb:0,wmin:0,score:67,tier:2,dso:18,orders:14,disc:0,streak:94,refCode:'OHP-STN4',refs:0,refReward:0,walletMilestone:null},
+  {id:5,name:'Premiere Specialist',contact:'Tunde Bakare',area:'Lekki Ph1',pm:'cash',wb:0,wmin:0,score:52,tier:1,dso:0,orders:3,disc:0,streak:31,refCode:'OHP-PRE5',refs:0,refReward:0,walletMilestone:'ready'},
+  {id:6,name:'ClearView Clinic',contact:'Ngozi N.',area:'Lekki Ph2',pm:'cash',wb:0,wmin:0,score:41,tier:1,dso:0,orders:3,disc:0,streak:22,refCode:'OHP-CLR6',refs:0,refReward:0,walletMilestone:'ready'},
+];
+const O=[
+  {id:'ORD-0041',h:'Reddington Hospital',hid:1,items:'10x Oxygen, 2x Nitrous Oxide',total:156000,st:'delivered',pm:'wallet',ps:'paid',tr:'Chukwu Logistics',dt:'2025-03-12'},
+  {id:'ORD-0040',h:'EKO Hospital',hid:2,items:'8x Medical Oxygen',total:96000,st:'in-transit',pm:'credit',ps:'pending',tr:'Rapid Gas Movers',dt:'2025-03-12'},
+  {id:'ORD-0039',h:'Lagoon Hospital',hid:3,items:'15x Oxygen, 4x CO2',total:218000,st:'dispatched',pm:'wallet',ps:'paid',tr:'Chukwu Logistics',dt:'2025-03-12'},
+  {id:'ORD-0038',h:'St. Nicholas Hospital',hid:4,items:'5x Medical Oxygen',total:60000,st:'pending',pm:'transfer',ps:'awaiting',tr:null,dt:'2025-03-11'},
+  {id:'ORD-0037',h:'Premiere Specialist',hid:5,items:'4x Medical Oxygen',total:48000,st:'pending',pm:'cash',ps:'awaiting',tr:null,dt:'2025-03-11'},
+  {id:'ORD-0036',h:'EKO Hospital',hid:2,items:'12x Medical Oxygen',total:144000,st:'delivered',pm:'credit',ps:'overdue',tr:'TranzitNG',dt:'2025-02-10'},
+];
+const G=[
+  {n:'Medical Oxygen (Cylinder)',cat:'oxygen',p:12000,s:85,m:30,src:'island'},
+  {n:'Medical Oxygen (Bulk)',cat:'oxygen',p:45,s:12000,m:3000,src:'island'},
+  {n:'Nitrous Oxide',cat:'anaesthetic',p:18000,s:22,m:10,src:'island'},
+  {n:'Carbon Dioxide',cat:'specialty',p:9500,s:18,m:8,src:'mainland'},
+  {n:'Nitrogen (Medical)',cat:'specialty',p:14500,s:12,m:6,src:'mainland'},
+  {n:'Entonox (50/50)',cat:'anaesthetic',p:22000,s:8,m:4,src:'mainland'},
+];
+const T=[
+  {n:'Chukwu Logistics',d:'Emeka Chukwu',del:31,ot:94,act:2},
+  {n:'Rapid Gas Movers',d:'Yemi Adebayo',del:18,ot:87,act:1},
+  {n:'TranzitNG',d:'Ike Okafor',del:12,ot:91,act:0},
+];
+const R=[
+  {id:'INV-0084',h:'EKO Hospital',amt:144000,due:'2025-03-13',ov:1,st:'overdue',rem:3},
+  {id:'INV-0082',h:'EKO Hospital',amt:96000,due:'2025-04-11',ov:0,st:'current',rem:0},
+  {id:'INV-0079',h:'St. Nicholas Hospital',amt:60000,due:'2025-04-10',ov:0,st:'awaiting',rem:0},
+];
+const REFS=[
+  {id:1,referrer:'Reddington Hospital',referred:'Apex Medical Centre',code:'OHP-RED1',status:'qualified',orders:5,reward:12000,date:'2025-01-14'},
+  {id:2,referrer:'Reddington Hospital',referred:'Harbour View Clinic',code:'OHP-RED1',status:'active',orders:2,reward:0,date:'2025-02-20'},
+  {id:3,referrer:'EKO Hospital',referred:'Unity Specialist',code:'OHP-EKO2',status:'pending',orders:0,reward:0,date:'2025-03-08'},
+];
+
+let pg='dashboard',oF='all',cF='all',rT='invoices',sC=null,sR=null,gTab='overview',refTab='all',rpHosp=1;
+
+const f=n=>n>=1e6?'N'+(n/1e6).toFixed(1)+'M':'N'+(n/1000).toFixed(0)+'K';
+const ff=n=>'N'+n.toLocaleString();
+
+function sb(s){const m={delivered:['bg','Delivered'],'in-transit':['bb','In Transit'],dispatched:['bb','Dispatched'],pending:['by','Pending'],overdue:['br','Overdue'],current:['bg','Current'],awaiting:['by','Awaiting'],paid:['bs','Paid'],qualified:['bg','Qualified'],active:['bb','Active']};const[c,l]=m[s]||['bs',s];return`<span class="badge ${c}"><span class="dot"></span>${l}</span>`}
+function pb(m){const mp={wallet:['bg','Wallet'],credit:['by','NET 30'],cash:['bs','Cash'],transfer:['bb','Transfer']};const[c,l]=mp[m]||['bs',m];return`<span class="badge ${c}">${l}</span>`}
+function tb(t){return['','<span class="badge bs">Tier 1</span>','<span class="badge by">Tier 2</span>','<span class="badge bg">Tier 3</span>'][t]||''}
+function scH(n){const c=n>=80?'#10b981':n>=60?'#f59e0b':'#ef4444';return`<div style="display:flex;align-items:center;gap:7px"><span style="font-size:16px;font-weight:700;color:${c}">${n}</span><div style="width:55px;background:#0f172a;border-radius:3px;height:4px;overflow:hidden"><div style="width:${n}%;height:100%;background:${c};border-radius:3px"></div></div></div>`}
+function streakBadge(d){const c=d>=200?'#10b981':d>=100?'#f59e0b':'#94a3b8';return`<span style="color:${c};font-weight:700;font-size:12px">${d}d</span>`}
+
+function dashPage(){
+  const lo=H.filter(h=>h.pm==='wallet'&&h.wb<h.wmin);
+  const fl=H.filter(h=>h.pm==='wallet').reduce((s,h)=>s+h.wb,0);
+  const nudges=H.filter(h=>h.walletMilestone==='ready');
+  return`
+  ${nudges.length?`<div class="alert alert-v">&#9733; <span><strong>${nudges.length} wallet milestone${nudges.length>1?'s':''} ready</strong> — ${nudges.map(h=>h.name).join(', ')} have 3+ orders. Send wallet nudge now.</span> <button class="btn btn-v btn-sm" style="margin-left:auto;white-space:nowrap" onclick="go('growth')">View nudges</button></div>`:''}
+  ${lo.length?`<div class="alert alert-y">&#9651; <span><strong>${lo.length} wallet(s) below minimum</strong> — ${lo.map(h=>h.name).join(', ')}</span></div>`:''}
+  <div class="alert alert-r">&#9888; <span><strong>N144K overdue</strong> — EKO Hospital is 1 day past due on INV-0084. Reminder sent.</span></div>
+  <div class="metrics">
+    <div class="metric" style="border-top-color:#10b981"><div class="metric-lbl">Mar Revenue MTD</div><div class="metric-val" style="color:#10b981">N762K</div><div class="metric-sub" style="color:#10b981">+6% vs Feb</div></div>
+    <div class="metric" style="border-top-color:#f59e0b"><div class="metric-lbl">Outstanding</div><div class="metric-val">N300K</div><div class="metric-sub" style="color:#ef4444">N144K overdue</div></div>
+    <div class="metric" style="border-top-color:#8b5cf6"><div class="metric-lbl">Active referrals</div><div class="metric-val" style="color:#8b5cf6">3</div><div class="metric-sub">N33,600 rewards earned</div></div>
+    <div class="metric" style="border-top-color:#10b981"><div class="metric-lbl">Avg supply streak</div><div class="metric-val">163d</div><div class="metric-sub" style="color:#10b981">0 missed deliveries</div></div>
+  </div>
+  <div class="row2">
+    <div class="card">
+      <div class="card-head"><span class="card-title">Wallet float</span><span style="font-size:10px;color:#64748b">Live balances</span></div>
+      <div style="padding:14px 16px">
+        ${H.filter(h=>h.pm==='wallet').map(h=>{const p=Math.min(100,(h.wb/(h.wmin*2))*100);const c=p<30?'#ef4444':p<50?'#f59e0b':'#10b981';return`<div style="margin-bottom:12px"><div style="display:flex;justify-content:space-between;margin-bottom:3px"><span style="font-size:12px;font-weight:500">${h.name}</span><span style="font-size:11.5px;font-weight:600;color:${c}">${f(h.wb)}</span></div><div class="wbar"><div class="wfill" style="width:${p}%;background:${c}"></div></div></div>`}).join('')}
+        <div style="border-top:1px solid #334155;padding-top:10px;margin-top:2px;display:flex;justify-content:space-between;font-size:12px"><span style="color:#64748b">Total float held</span><span style="font-weight:700;color:#10b981">${f(fl)}</span></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-head"><span class="card-title">Supply continuity</span><span style="font-size:10px;color:#64748b">Streak = 0 missed deliveries</span></div>
+      <div style="padding:10px 16px">
+        ${H.map(h=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid #1e293b">
+          <div><div style="font-size:12.5px;font-weight:500">${h.name}</div><div style="font-size:10.5px;color:#64748b">${h.area}</div></div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <div style="width:60px;background:#0f172a;border-radius:3px;height:4px;overflow:hidden"><div style="width:${Math.min(100,(h.streak/300)*100)}%;height:100%;background:${h.streak>=200?'#10b981':h.streak>=100?'#f59e0b':'#94a3b8'};border-radius:3px"></div></div>
+            ${streakBadge(h.streak)}
+          </div>
+        </div>`).join('')}
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-head"><span class="card-title">Recent orders</span><button class="btn btn-g btn-sm" onclick="go('orders')">View all</button></div>
+    <table><thead><tr><th>Order</th><th>Hospital</th><th>Amount</th><th>Status</th><th>Payment</th><th>Transporter</th></tr></thead>
+    <tbody>${O.slice(0,5).map(o=>`<tr><td><span style="font-weight:700;color:#10b981;font-size:11.5px">${o.id}</span></td><td style="font-weight:500">${o.h}</td><td style="font-weight:600">${ff(o.total)}</td><td>${sb(o.st)}</td><td>${pb(o.pm)}</td><td style="color:#94a3b8;font-size:12px">${o.tr||'--'}</td></tr>`).join('')}</tbody></table>
+  </div>`;
+}
+
+function ordersPage(){
+  const fl=O.filter(o=>oF==='all'||o.st===oF||(oF==='overdue'&&o.ps==='overdue'));
+  return`
+  <div class="filters">
+    ${['all','pending','dispatched','in-transit','delivered','overdue'].map(x=>`<button class="chip ${oF===x?'on':''}" onclick="setOF('${x}')">${x[0].toUpperCase()+x.slice(1)}</button>`).join('')}
+    <button class="btn btn-p btn-sm" style="margin-left:auto" onclick="openM('neworder')">+ New order</button>
+  </div>
+  <div class="card"><table><thead><tr><th>Order ID</th><th>Hospital</th><th>Items</th><th>Total</th><th>Status</th><th>Payment</th><th>Transporter</th><th></th></tr></thead>
+  <tbody>${fl.map(o=>`<tr>
+    <td><span style="font-weight:700;color:#10b981;font-size:11.5px">${o.id}</span></td>
+    <td style="font-weight:500">${o.h}</td>
+    <td style="color:#64748b;font-size:11.5px;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${o.items}</td>
+    <td style="font-weight:600">${ff(o.total)}</td>
+    <td>${sb(o.st)}${o.ps==='overdue'?' <span class="badge br">Overdue</span>':''}</td>
+    <td>${pb(o.pm)}</td>
+    <td style="font-size:12px;color:#94a3b8">${o.tr||'--'}</td>
+    <td>${o.st==='pending'&&(o.ps==='paid'||o.pm==='credit')?`<button class="btn btn-g btn-sm" onclick="openM('dispatch')">Dispatch</button>`:o.st==='dispatched'?`<button class="btn btn-g btn-sm" style="color:#10b981">Confirm POD</button>`:''}</td>
+  </tr>`).join('')}</tbody></table></div>`;
+}
+
+function clientsPage(){
+  const fl=H.filter(h=>cF==='all'||h.pm===cF);
+  const sc=sC;
+  return`<div style="display:flex;gap:14px">
+    <div style="flex:1;min-width:0">
+      <div class="filters">
+        ${['all','wallet','credit','transfer','cash'].map(x=>`<button class="chip ${cF===x?'on':''}" onclick="setCF('${x}')">${x[0].toUpperCase()+x.slice(1)}</button>`).join('')}
+        <button class="btn btn-p btn-sm" style="margin-left:auto" onclick="openM('newclient')">+ Add hospital</button>
+      </div>
+      <div class="card"><table><thead><tr><th>Hospital</th><th>Area</th><th>Payment</th><th>Wallet</th><th>Score</th><th>Tier</th><th>Streak</th></tr></thead>
+      <tbody>${fl.map(h=>{const p=h.pm==='wallet'&&h.wmin>0?Math.min(100,(h.wb/(h.wmin*2))*100):0;const c=p<30?'#ef4444':p<50?'#f59e0b':'#10b981';const sel=sc&&sc.id===h.id;return`<tr onclick="setSC(${h.id})" style="background:${sel?'rgba(16,185,129,.04)':''}">
+        <td><div style="font-weight:500">${h.name}</div><div style="font-size:10.5px;color:#64748b">${h.contact}</div></td>
+        <td style="color:#64748b;font-size:12px">${h.area}</td>
+        <td>${pb(h.pm)}</td>
+        <td>${h.pm==='wallet'?`<div style="font-size:12px;font-weight:600;color:${c}">${f(h.wb)}</div><div class="wbar" style="width:90px"><div class="wfill" style="width:${p}%;background:${c}"></div></div>`:'<span style="color:#64748b">--</span>'}</td>
+        <td>${scH(h.score)}</td><td>${tb(h.tier)}</td>
+        <td>${streakBadge(h.streak)}</td>
+      </tr>`}).join('')}</tbody></table></div>
+    </div>
+    ${sc?`<div class="detail">
+      <div class="dcard">
+        <div style="display:flex;justify-content:space-between;margin-bottom:9px"><span style="font-weight:700;font-size:13px">${sc.name}</span><button class="btn btn-g btn-sm" onclick="setSC(null)">x</button></div>
+        <div style="font-size:11.5px;color:#64748b;margin-bottom:2px">${sc.contact}</div>
+        <div style="font-size:11.5px;color:#64748b;margin-bottom:10px">${sc.area}</div>
+        <div style="font-size:12px;margin-bottom:3px"><span style="color:#64748b">Orders: </span>${sc.orders}</div>
+        ${sc.disc>0?`<div style="font-size:12px;margin-bottom:3px"><span style="color:#64748b">Discount: </span><span style="color:#10b981">${sc.disc}%</span></div>`:''}
+        <div style="font-size:12px"><span style="color:#64748b">Supply streak: </span>${streakBadge(sc.streak)}<span style="color:#64748b;margin-left:4px">no missed deliveries</span></div>
+      </div>
+      <div class="dcard">
+        <div class="dtitle">Credit profile</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">${scH(sc.score)}${tb(sc.tier)}</div>
+        <div style="font-size:11px;color:#64748b">${sc.score>=80?'Excellent — eligible for NET 30.':sc.score>=60?'Good — consider NET 15.':'New payer. Cash recommended.'}</div>
+      </div>
+      <div class="dcard">
+        <div class="dtitle">Referral programme</div>
+        <div style="font-size:10.5px;color:#64748b;margin-bottom:8px">Unique referral code</div>
+        <div class="ref-code" style="margin-bottom:10px">${sc.refCode}</div>
+        <div style="font-size:12px;display:flex;justify-content:space-between;margin-bottom:5px"><span style="color:#64748b">Referrals made</span><span style="font-weight:600">${sc.refs}</span></div>
+        <div style="font-size:12px;display:flex;justify-content:space-between"><span style="color:#64748b">Wallet credits earned</span><span style="font-weight:600;color:#10b981">${sc.refReward>0?ff(sc.refReward):'--'}</span></div>
+      </div>
+      ${sc.pm==='wallet'?`<div class="dcard">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><div class="dtitle" style="margin:0">Wallet</div><button class="btn btn-g btn-sm" onclick="openM('walletcfg')">Config</button></div>
+        <div style="font-size:22px;font-weight:700;color:${sc.wb<sc.wmin?'#ef4444':'#10b981'};margin-bottom:5px">${f(sc.wb)}</div>
+        <div style="font-size:11px;color:#64748b;margin-bottom:9px">Min: ${f(sc.wmin)}</div>
+        ${sc.wb<sc.wmin?`<div class="alert alert-r" style="font-size:11px;padding:6px 9px;margin-bottom:8px">Below minimum</div>`:''}
+        <div style="display:flex;gap:5px"><button class="btn btn-g btn-sm">+N100K</button><button class="btn btn-g btn-sm">+N500K</button></div>
+      </div>`:''}
+      <div class="dcard">
+        <div class="dtitle">Payment mode</div>
+        <div style="display:flex;flex-direction:column;gap:5px">
+          ${['wallet','credit','transfer','cash'].map(m=>`<button class="btn ${sc.pm===m?'btn-p':'btn-g'} btn-sm" style="justify-content:flex-start">${m==='wallet'?'Wallet (pre-funded)':m==='credit'?'Credit NET 30':m==='transfer'?'Bank transfer':'Cash on order'}</button>`).join('')}
+        </div>
+      </div>
+    </div>`:''}
+  </div>`;
+}
+
+function recPage(){
+  const tot=R.filter(r=>r.st!=='paid').reduce((s,r)=>s+r.amt,0);
+  const ov=R.filter(r=>r.st==='overdue').reduce((s,r)=>s+r.amt,0);
+  const steps=[{d:'On invoice',l:'Delivered via WhatsApp + email',done:true},{d:'Day 7',l:'Friendly reminder sent',done:true},{d:'Day 14',l:'Second reminder + payment link',done:true},{d:'Day 25',l:'Urgent alert',done:true},{d:'Day 30',l:'Due date — flag account',done:false,now:true},{d:'Day 35+',l:'Delivery hold on new orders',done:false}];
+  return`
+  <div class="metrics" style="grid-template-columns:repeat(3,1fr)">
+    <div class="metric" style="border-top-color:#f59e0b"><div class="metric-lbl">Outstanding</div><div class="metric-val">${f(tot)}</div><div class="metric-sub">${R.filter(r=>r.st!=='paid').length} invoices</div></div>
+    <div class="metric" style="border-top-color:#ef4444"><div class="metric-lbl">Overdue</div><div class="metric-val" style="color:#ef4444">${f(ov)}</div><div class="metric-sub" style="color:#ef4444">Action required</div></div>
+    <div class="metric" style="border-top-color:#10b981"><div class="metric-lbl">Avg Days to Pay</div><div class="metric-val">17d</div><div class="metric-sub" style="color:#10b981">Down 4 days vs last quarter</div></div>
+  </div>
+  <div class="alert alert-r">&#9888; <strong>Action required:</strong> 1 invoice overdue. Automated reminder sent to EKO Hospital.</div>
+  <div class="tabs"><div class="tab ${rT==='invoices'?'on':''}" onclick="setRT('invoices')">Outstanding invoices</div><div class="tab ${rT==='log'?'on':''}" onclick="setRT('log')">Reminder log</div></div>
+  ${rT==='invoices'?`<div style="display:flex;gap:14px">
+    <div style="flex:1;min-width:0"><div class="card"><table><thead><tr><th>Invoice</th><th>Hospital</th><th>Amount</th><th>Due date</th><th>Status</th><th>Reminders</th><th></th></tr></thead>
+    <tbody>${R.map(r=>`<tr onclick="setSR('${r.id}')" style="background:${sR&&sR.id===r.id?'rgba(16,185,129,.04)':''}">
+      <td><span style="font-weight:700;color:#10b981;font-size:11.5px">${r.id}</span></td>
+      <td style="font-weight:500">${r.h}</td><td style="font-weight:600">${ff(r.amt)}</td>
+      <td><div>${r.due}</div>${r.ov>0?`<div style="font-size:10.5px;color:#ef4444">${r.ov}d overdue</div>`:''}</td>
+      <td>${sb(r.st)}</td><td><span class="badge bs">${r.rem} sent</span></td>
+      <td onclick="event.stopPropagation()"><div style="display:flex;gap:5px"><button class="btn btn-g btn-sm" onclick="openM('remind')">Send reminder</button><button class="btn btn-g btn-sm" style="color:#10b981">Mark paid</button></div></td>
+    </tr>`).join('')}</tbody></table></div></div>
+    ${sR?`<div style="width:220px;flex-shrink:0"><div class="dcard">
+      <div style="display:flex;justify-content:space-between;margin-bottom:10px"><div class="dtitle" style="margin:0">${sR.id}</div><button class="btn btn-g btn-sm" onclick="setSR(null)">x</button></div>
+      <div style="font-weight:500;margin-bottom:3px">${sR.h}</div>
+      <div style="font-size:22px;font-weight:700;color:${sR.st==='overdue'?'#ef4444':'#f59e0b'};margin-bottom:12px">${ff(sR.amt)}</div>
+      <div style="border-top:1px solid #334155;padding-top:11px;margin-bottom:9px;font-size:10px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:.06em">Reminder timeline</div>
+      <div class="tl">${steps.map(s=>`<div class="tli ${s.done?'done':s.now?'now':''}"><div style="font-size:11.5px;font-weight:500">${s.d}</div><div style="font-size:10.5px;color:#64748b;margin-top:1px">${s.l}</div></div>`).join('')}</div>
+    </div></div>`:''}
+  </div>`:`<div class="card"><table><thead><tr><th>Hospital</th><th>Invoice</th><th>Channel</th><th>Message</th><th>Sent</th><th>Status</th></tr></thead><tbody>
+    <tr><td style="font-weight:500">EKO Hospital</td><td style="color:#94a3b8;font-size:11px">INV-0084</td><td><span class="badge bb">SMS</span></td><td style="color:#64748b;font-size:11px">Invoice N144,000 is 1 day overdue...</td><td style="color:#64748b;font-size:11px">Mar 14 09:00</td><td><span class="badge bs">delivered</span></td></tr>
+    <tr><td style="font-weight:500">EKO Hospital</td><td style="color:#94a3b8;font-size:11px">INV-0084</td><td><span class="badge bg">WhatsApp</span></td><td style="color:#64748b;font-size:11px">Reminder: Invoice due March 13...</td><td style="color:#64748b;font-size:11px">Mar 10 10:30</td><td><span class="badge bg">read</span></td></tr>
+  </tbody></table></div>`}`;
+}
+
+function logPage(){
+  return`
+  <div class="metrics" style="grid-template-columns:repeat(3,1fr)">
+    <div class="metric" style="border-top-color:#3b82f6"><div class="metric-lbl">In Transit</div><div class="metric-val">2</div><div class="metric-sub">Active deliveries</div></div>
+    <div class="metric" style="border-top-color:#10b981"><div class="metric-lbl">Transporters</div><div class="metric-val">3</div><div class="metric-sub">2 active today</div></div>
+    <div class="metric" style="border-top-color:#f59e0b"><div class="metric-lbl">Avg On-Time</div><div class="metric-val">91%</div><div class="metric-sub" style="color:#10b981">+2% this month</div></div>
+  </div>
+  <div class="row2">
+    <div><div style="font-size:13px;font-weight:600;margin-bottom:12px">Transporters</div>
+    <div style="display:flex;flex-direction:column;gap:10px">${T.map(t=>`<div class="card" style="padding:14px 16px">
+      <div style="display:flex;justify-content:space-between;margin-bottom:9px"><div><div style="font-weight:600;margin-bottom:2px">${t.n}</div><div style="font-size:11px;color:#64748b">${t.d}</div></div><span class="badge ${t.act>0?'bg':'bs'}"><span class="dot"></span>${t.act>0?t.act+' active':'Idle'}</span></div>
+      <div style="display:flex;gap:20px;margin-bottom:9px"><div><div style="font-size:9px;text-transform:uppercase;letter-spacing:.06em;color:#64748b;margin-bottom:2px">Deliveries</div><div style="font-size:18px;font-weight:700">${t.del}</div></div><div><div style="font-size:9px;text-transform:uppercase;letter-spacing:.06em;color:#64748b;margin-bottom:2px">On-Time</div><div style="font-size:18px;font-weight:700;color:${t.ot>=90?'#10b981':'#f59e0b'}">${t.ot}%</div></div></div>
+      <div style="background:#0f172a;border-radius:3px;height:4px;overflow:hidden"><div style="width:${t.ot}%;height:100%;background:${t.ot>=90?'#10b981':'#f59e0b'};border-radius:3px"></div></div>
+    </div>`).join('')}</div></div>
+    <div><div style="font-size:13px;font-weight:600;margin-bottom:12px">Active deliveries</div>
+    <div style="display:flex;flex-direction:column;gap:10px">${O.filter(o=>o.st==='dispatched'||o.st==='in-transit').map(o=>`<div class="card" style="padding:14px 16px">
+      <div style="display:flex;justify-content:space-between;margin-bottom:7px"><span style="font-weight:700;color:#10b981;font-size:12px">${o.id}</span>${sb(o.st)}</div>
+      <div style="font-weight:500;margin-bottom:3px">${o.h}</div>
+      <div style="font-size:11.5px;color:#64748b;margin-bottom:5px">${o.tr}</div>
+      <div style="font-size:12px;color:#64748b">${o.items}</div>
+      <div style="margin-top:8px;font-size:13px;font-weight:700">${ff(o.total)}</div>
+    </div>`).join('')}</div></div>
+  </div>`;
+}
+
+function invPage(){
+  const low=G.filter(g=>g.s<=g.m*1.2);
+  const cc={oxygen:'bg',anaesthetic:'by',specialty:'bb'};
+  return`
+  ${low.length?`<div class="alert alert-y">&#9651; <span><strong>${low.length} product(s) low on stock.</strong> Reorder from your suppliers.</span></div>`:''}
+  <div class="metrics" style="grid-template-columns:repeat(3,1fr)">
+    <div class="metric" style="border-top-color:#10b981"><div class="metric-lbl">Total SKUs</div><div class="metric-val">${G.length}</div><div class="metric-sub">All gas products</div></div>
+    <div class="metric" style="border-top-color:#f59e0b"><div class="metric-lbl">Low Stock</div><div class="metric-val" style="color:#f59e0b">${low.length}</div><div class="metric-sub" style="color:#f59e0b">Needs attention</div></div>
+    <div class="metric" style="border-top-color:#3b82f6"><div class="metric-lbl">Island Sourced</div><div class="metric-val">${G.filter(g=>g.src==='island').length}</div><div class="metric-sub">${G.filter(g=>g.src==='mainland').length} from mainland</div></div>
+  </div>
+  <div class="card"><table><thead><tr><th>Product</th><th>Category</th><th>Unit price</th><th>Stock</th><th>Level</th><th>Source</th></tr></thead>
+  <tbody>${G.map(g=>{const p=Math.min(100,(g.s/(g.m*3))*100);const il=g.s<=g.m*1.2;return`<tr>
+    <td style="font-weight:500">${g.n}</td>
+    <td><span class="badge ${cc[g.cat]||'bs'}">${g.cat}</span></td>
+    <td style="font-weight:500">N${g.p.toLocaleString()}</td>
+    <td><span style="font-weight:600;color:${il?'#ef4444':'#f1f5f9'}">${g.s.toLocaleString()}</span></td>
+    <td><div style="width:90px;background:#0f172a;border-radius:3px;height:5px;overflow:hidden"><div style="width:${p}%;height:100%;background:${il?'#ef4444':p<50?'#f59e0b':'#10b981'};border-radius:3px"></div></div></td>
+    <td><span class="badge ${g.src==='island'?'bg':'bb'}">${g.src==='island'?'Island partner':'Mainland'}</span></td>
+  </tr>`}).join('')}</tbody></table></div>`;
+}
+
+function growthPage(){
+  const nudges=H.filter(h=>h.walletMilestone==='ready');
+  const totalRefs=REFS.length;
+  const qualifiedRefs=REFS.filter(r=>r.status==='qualified').length;
+  const totalRewards=H.reduce((s,h)=>s+h.refReward,0);
+  return`
+  <div class="metrics">
+    <div class="metric" style="border-top-color:#8b5cf6"><div class="metric-lbl">Referrals in pipeline</div><div class="metric-val" style="color:#8b5cf6">${totalRefs}</div><div class="metric-sub">${qualifiedRefs} qualified</div></div>
+    <div class="metric" style="border-top-color:#10b981"><div class="metric-lbl">Wallet reward credits</div><div class="metric-val">N${(totalRewards/1000).toFixed(0)}K</div><div class="metric-sub">Total earned by referrers</div></div>
+    <div class="metric" style="border-top-color:#f59e0b"><div class="metric-lbl">Wallet nudges ready</div><div class="metric-val" style="color:#f59e0b">${nudges.length}</div><div class="metric-sub">3+ orders, not on wallet</div></div>
+    <div class="metric" style="border-top-color:#10b981"><div class="metric-lbl">Avg supply streak</div><div class="metric-val">163d</div><div class="metric-sub" style="color:#10b981">Across all hospitals</div></div>
+  </div>
+
+  <div class="row2">
+    <div>
+      <div style="font-size:13px;font-weight:600;margin-bottom:12px">Wallet conversion nudges</div>
+      ${nudges.length===0?`<div class="card" style="padding:20px;text-align:center;color:#64748b">No nudges pending</div>`:''}
+      ${nudges.map(h=>`<div class="nudge-card">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">
+          <div>
+            <div style="font-weight:600;font-size:13px;margin-bottom:2px">${h.name}</div>
+            <div style="font-size:11.5px;color:#94a3b8">${h.orders} orders completed &bull; ${h.area}</div>
+          </div>
+          <span class="badge bv">Milestone</span>
+        </div>
+        <div style="font-size:12px;color:#c4b5fd;margin-bottom:12px;line-height:1.6">
+          "${h.name} has placed ${h.orders} orders. Wallet clients at this volume save an avg of 4% annually and get priority dispatch. Ready to activate?"
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-v btn-sm">Send WhatsApp nudge</button>
+          <button class="btn btn-g btn-sm">Send SMS</button>
+          <button class="btn btn-g btn-sm">Dismiss</button>
+        </div>
+      </div>`).join('')}
+
+      <div style="margin-top:16px;font-size:13px;font-weight:600;margin-bottom:12px">Supply continuity scores</div>
+      <div class="card">
+        ${H.map(h=>{const c=h.streak>=200?'#10b981':h.streak>=100?'#f59e0b':'#94a3b8';const borderC=h.streak>=200?'#10b981':h.streak>=100?'#f59e0b':'#475569';return`<div class="growth-stat">
+          <div style="display:flex;align-items:center;gap:12px">
+            <div class="score-ring" style="color:${c};border-color:${borderC};font-size:13px">${h.streak}</div>
+            <div>
+              <div style="font-size:12.5px;font-weight:500">${h.name}</div>
+              <div style="font-size:10.5px;color:#64748b">0 missed deliveries in ${h.streak} days</div>
+            </div>
+          </div>
+          <button class="btn btn-g btn-sm" onclick="openM('sendreport')">Share score</button>
+        </div>`}).join('')}
+      </div>
+    </div>
+
+    <div>
+      <div style="font-size:13px;font-weight:600;margin-bottom:12px">Growth funnel</div>
+      <div class="card" style="padding:16px;margin-bottom:14px">
+        ${[
+          ['Total hospitals',H.length,'#f1f5f9',100],
+          ['3+ orders (sticky)',H.filter(h=>h.orders>=10).length,'#3b82f6',Math.round(H.filter(h=>h.orders>=10).length/H.length*100)],
+          ['Wallet accounts',H.filter(h=>h.pm==='wallet').length,'#10b981',Math.round(H.filter(h=>h.pm==='wallet').length/H.length*100)],
+          ['Active referrers',H.filter(h=>h.refs>0).length,'#8b5cf6',Math.round(H.filter(h=>h.refs>0).length/H.length*100)],
+        ].map(([l,n,c,p])=>`<div style="margin-bottom:14px">
+          <div style="display:flex;justify-content:space-between;margin-bottom:5px"><span style="font-size:12.5px">${l}</span><span style="font-size:13px;font-weight:700;color:${c}">${n}</span></div>
+          <div style="background:#0f172a;border-radius:3px;height:6px;overflow:hidden"><div style="width:${p}%;height:100%;background:${c};border-radius:3px"></div></div>
+        </div>`).join('')}
+      </div>
+
+      <div style="font-size:13px;font-weight:600;margin-bottom:12px">PLG actions this week</div>
+      <div class="card" style="padding:0">
+        ${[
+          {action:'Send wallet nudge',target:'Premiere Specialist + ClearView',urgency:'by','badge':'bv',label:'Today'},
+          {action:'Monthly supply report',target:'All 6 hospitals — Apr 1',urgency:'scheduled','badge':'bg',label:'Apr 1'},
+          {action:'Follow up referral',target:'Unity Specialist (OHP-EKO2)',urgency:'pending','badge':'by',label:'Pending'},
+          {action:'Upgrade EKO to wallet pitch',target:'After INV-0084 is cleared',urgency:'blocked','badge':'bs',label:'Blocked'},
+        ].map(a=>`<div style="padding:12px 14px;border-bottom:1px solid #334155;display:flex;align-items:center;justify-content:space-between">
+          <div>
+            <div style="font-size:12.5px;font-weight:500;margin-bottom:2px">${a.action}</div>
+            <div style="font-size:11px;color:#64748b">${a.target}</div>
+          </div>
+          <span class="badge ${a.badge}">${a.label}</span>
+        </div>`).join('')}
+        <div style="padding:10px 14px"></div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function referralsPage(){
+  const allRefs=refTab==='all'?REFS:REFS.filter(r=>r.status===refTab);
+  return`
+  <div class="metrics" style="grid-template-columns:repeat(4,1fr)">
+    <div class="metric" style="border-top-color:#8b5cf6"><div class="metric-lbl">Total referrals</div><div class="metric-val" style="color:#8b5cf6">${REFS.length}</div><div class="metric-sub">Since programme launch</div></div>
+    <div class="metric" style="border-top-color:#10b981"><div class="metric-lbl">Qualified</div><div class="metric-val">${REFS.filter(r=>r.status==='qualified').length}</div><div class="metric-sub">3+ orders placed</div></div>
+    <div class="metric" style="border-top-color:#f59e0b"><div class="metric-lbl">In progress</div><div class="metric-val">${REFS.filter(r=>r.status==='active').length}</div><div class="metric-sub">1-2 orders placed</div></div>
+    <div class="metric" style="border-top-color:#10b981"><div class="metric-lbl">Rewards issued</div><div class="metric-val">N${(H.reduce((s,h)=>s+h.refReward,0)/1000).toFixed(0)}K</div><div class="metric-sub">Wallet credits</div></div>
+  </div>
+
+  <div class="alert alert-v">&#9733; <strong>Referral mechanic:</strong> When a referred hospital places their 3rd order, the referring hospital receives a 2% wallet credit on their next top-up. Tracked automatically.</div>
+
+  <div class="tabs">
+    ${['all','qualified','active','pending'].map(t=>`<div class="tab ${refTab===t?'on':''}" onclick="setRefTab('${t}')">${t[0].toUpperCase()+t.slice(1)}</div>`).join('')}
+  </div>
+
+  <div class="row2">
+    <div class="card" style="grid-column:1/-1">
+      <table><thead><tr><th>Referrer</th><th>Referred hospital</th><th>Code used</th><th>Status</th><th>Orders placed</th><th>Reward earned</th><th>Date</th></tr></thead>
+      <tbody>${allRefs.map(r=>`<tr>
+        <td style="font-weight:500">${r.referrer}</td>
+        <td style="font-weight:500">${r.referred}</td>
+        <td><span class="ref-code" style="font-size:11px;padding:3px 8px">${r.code}</span></td>
+        <td>${sb(r.status)}</td>
+        <td><span style="font-weight:600">${r.orders}</span><span style="color:#64748b;font-size:11px"> / 3 to qualify</span></td>
+        <td><span style="font-weight:600;color:${r.reward>0?'#10b981':'#64748b'}">${r.reward>0?ff(r.reward):'Pending'}</span></td>
+        <td style="color:#64748b;font-size:11.5px">${r.date}</td>
+      </tr>`).join('')}</tbody></table>
+    </div>
+  </div>
+
+  <div style="font-size:13px;font-weight:600;margin:16px 0 12px">Referral codes by hospital</div>
+  <div class="row2">
+    ${H.map(h=>`<div class="card" style="padding:14px 16px;display:flex;align-items:center;justify-content:space-between">
+      <div>
+        <div style="font-size:12.5px;font-weight:500;margin-bottom:3px">${h.name}</div>
+        <div class="ref-code">${h.refCode}</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:20px;font-weight:700;color:#8b5cf6">${h.refs}</div>
+        <div style="font-size:10px;color:#64748b;text-transform:uppercase;letter-spacing:.05em">referrals</div>
+        ${h.refReward>0?`<div style="font-size:12px;color:#10b981;font-weight:600;margin-top:2px">${ff(h.refReward)} earned</div>`:''}
+      </div>
+    </div>`).join('')}
+  </div>`;
+}
+
+function reportsPage(){
+  const h=H.find(x=>x.id===rpHosp)||H[0];
+  const monthOrders=O.filter(o=>o.hid===h.id&&o.st==='delivered');
+  const monthSpend=monthOrders.reduce((s,o)=>s+o.total,0);
+  return`
+  <div style="display:flex;gap:16px;align-items:flex-start">
+    <div style="flex:1;min-width:0">
+      <div class="card-head" style="padding:0;margin-bottom:14px;border:none">
+        <span style="font-size:13px;font-weight:600">Generate monthly supply report</span>
+        <select style="width:220px;font-size:12px;padding:6px 10px" onchange="setRpHosp(this.value)">
+          ${H.map(h=>`<option value="${h.id}" ${h.id===rpHosp?'selected':''}>${h.name}</option>`).join('')}
+        </select>
+      </div>
+
+      <div class="report-preview">
+        <div style="text-align:center;margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid #334155">
+          <div style="font-size:16px;font-weight:700;color:#10b981;margin-bottom:2px">Oxyrious</div>
+          <div style="font-size:11px;color:#64748b">Monthly Supply Report — March 2025</div>
+          <div style="font-size:13px;font-weight:600;margin-top:8px">${h.name}</div>
+          <div style="font-size:11px;color:#64748b">${h.area} &bull; Prepared for: ${h.contact}</div>
+        </div>
+
+        <div class="kpi-row">
+          <div class="kpi"><div class="kpi-n" style="color:#10b981">${monthOrders.length}</div><div class="kpi-l">Deliveries</div></div>
+          <div class="kpi"><div class="kpi-n">N${(monthSpend/1000).toFixed(0)}K</div><div class="kpi-l">Total spend</div></div>
+          <div class="kpi"><div class="kpi-n" style="color:#10b981">0</div><div class="kpi-l">Missed</div></div>
+          <div class="kpi"><div class="kpi-n" style="color:${h.streak>=200?'#10b981':h.streak>=100?'#f59e0b':'#94a3b8'}">${h.streak}d</div><div class="kpi-l">Streak</div></div>
+        </div>
+
+        <div style="margin-bottom:12px;padding:10px 12px;background:#1e293b;border-radius:7px;border-left:3px solid #10b981">
+          <div style="font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:#64748b;margin-bottom:4px">Supply continuity score</div>
+          <div style="font-size:18px;font-weight:700;color:#10b981">${h.streak} consecutive days — 0 missed deliveries</div>
+          <div style="font-size:11px;color:#64748b;margin-top:2px">Top ${h.streak>=200?'10':'25'}% of all Oxyrious clients</div>
+        </div>
+
+        <table style="font-size:11.5px"><thead><tr><th style="font-size:10px">Order</th><th style="font-size:10px">Items</th><th style="font-size:10px">Amount</th><th style="font-size:10px">Status</th></tr></thead>
+        <tbody>${O.filter(o=>o.hid===h.id).slice(0,3).map(o=>`<tr><td>${o.id}</td><td style="color:#64748b">${o.items}</td><td style="font-weight:600">${ff(o.total)}</td><td>${sb(o.st)}</td></tr>`).join('')}
+        </tbody></table>
+
+        ${h.pm==='wallet'?`<div style="margin-top:12px;padding:10px 12px;background:#1e293b;border-radius:7px">
+          <div style="font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:#64748b;margin-bottom:4px">Wallet account</div>
+          <div style="display:flex;justify-content:space-between">
+            <span style="font-size:12px">Current balance</span><span style="font-weight:700;color:#10b981">${f(h.wb)}</span>
+          </div>
+          <div style="display:flex;justify-content:space-between">
+            <span style="font-size:12px">Discount tier</span><span style="font-weight:700;color:#10b981">${h.disc}% active</span>
+          </div>
+        </div>`:''}
+
+        <div style="margin-top:14px;padding-top:12px;border-top:1px solid #334155;font-size:11px;color:#64748b;text-align:center">
+          Oxyrious &bull; Lekki, Lagos &bull; Report auto-generated March 1, 2025
+        </div>
+      </div>
+
+      <div style="display:flex;gap:10px;margin-top:14px">
+        <button class="btn btn-p">Send via WhatsApp to ${h.contact}</button>
+        <button class="btn btn-g">Download PDF</button>
+        <button class="btn btn-g">Send by email</button>
+      </div>
+    </div>
+
+    <div style="width:240px;flex-shrink:0">
+      <div class="dcard" style="margin-bottom:12px">
+        <div class="dtitle">Report schedule</div>
+        <div style="font-size:12px;color:#64748b;margin-bottom:12px">Auto-send on 1st of each month</div>
+        ${H.map(h=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid #334155">
+          <span style="font-size:12px">${h.name}</span>
+          <span class="badge bg" style="font-size:10px">Active</span>
+        </div>`).join('')}
+        <div style="margin-top:10px;font-size:11px;color:#64748b">Next send: April 1, 2025</div>
+      </div>
+      <div class="dcard">
+        <div class="dtitle">What the report does</div>
+        <div style="font-size:12px;color:#94a3b8;line-height:1.7">
+          Sent to the hospital COO on the 1st of each month. Shows delivery history, supply streak, spend summary, and wallet balance. Positions Oxyrious as a strategic partner — not just a vendor. COOs share this with peers.
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+const MODALS={
+  neworder:`<div class="modal-bg" onclick="closeM()"><div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-hd"><div class="modal-title">Create new order</div><button class="btn btn-g btn-sm" onclick="closeM()">x</button></div>
+    <div class="fg"><label>Hospital</label><select>${H.map(h=>`<option>${h.name} (${h.pm})</option>`).join('')}</select></div>
+    <div class="alert alert-g" style="margin-bottom:12px;font-size:12px">Default: <strong>Wallet -- Balance N820,000</strong></div>
+    <div class="fg"><label>Override payment</label><select><option>Use hospital default</option><option>Wallet</option><option>Cash on delivery</option><option>Bank transfer</option><option>Credit NET 30</option></select></div>
+    <div class="fg"><label>Gas product</label><select>${G.map(g=>`<option>${g.n} -- N${g.p.toLocaleString()}</option>`).join('')}</select></div>
+    <div class="fg"><label>Quantity</label><input type="number" value="10"/></div>
+    <div style="background:#0f172a;border-radius:8px;padding:11px 14px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center"><span style="color:#64748b">Order total</span><span style="font-size:18px;font-weight:700;color:#10b981">N120,000</span></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end"><button class="btn btn-g" onclick="closeM()">Cancel</button><button class="btn btn-p">Create order</button></div>
+  </div></div>`,
+  newclient:`<div class="modal-bg" onclick="closeM()"><div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-hd"><div class="modal-title">Add new hospital</div><button class="btn btn-g btn-sm" onclick="closeM()">x</button></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div class="fg"><label>Hospital name</label><input placeholder="e.g. Lekki Health Centre"/></div>
+      <div class="fg"><label>Area</label><input placeholder="Lekki Phase 1"/></div>
+      <div class="fg"><label>Contact person</label><input placeholder="Full name"/></div>
+      <div class="fg"><label>Phone</label><input placeholder="0801 234 5678"/></div>
+    </div>
+    <div class="fg"><label>Default payment mode</label><select><option>Cash on order (default for new clients)</option><option>Wallet (pre-funded)</option><option>Bank transfer</option><option>Credit NET 30</option></select></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end"><button class="btn btn-g" onclick="closeM()">Cancel</button><button class="btn btn-p">Add hospital</button></div>
+  </div></div>`,
+  walletcfg:`<div class="modal-bg" onclick="closeM()"><div class="modal" style="max-width:380px" onclick="event.stopPropagation()">
+    <div class="modal-hd"><div class="modal-title">Configure wallet</div><button class="btn btn-g btn-sm" onclick="closeM()">x</button></div>
+    <div class="fg"><label>Minimum balance (N)</label><input type="number" value="200000"/></div>
+    <div class="fg"><label>Discount rate (%)</label><input type="number" value="3" min="0" max="10"/></div>
+    <div class="fg"><label>Grace period after zero</label><select><option>0 -- strict hold</option><option>3 days grace</option><option>5 days grace</option></select></div>
+    <div class="fg"><label>Low-balance alert at</label><select><option>30% remaining</option><option>50% remaining</option></select></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end"><button class="btn btn-g" onclick="closeM()">Cancel</button><button class="btn btn-p">Save config</button></div>
+  </div></div>`,
+  dispatch:`<div class="modal-bg" onclick="closeM()"><div class="modal" style="max-width:360px" onclick="event.stopPropagation()">
+    <div class="modal-hd"><div class="modal-title">Dispatch order</div><button class="btn btn-g btn-sm" onclick="closeM()">x</button></div>
+    <div class="fg"><label>Assign transporter</label><select><option>Select...</option>${T.map(t=>`<option>${t.n} (${t.ot}% on-time)</option>`).join('')}</select></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end"><button class="btn btn-g" onclick="closeM()">Cancel</button><button class="btn btn-p">Dispatch now</button></div>
+  </div></div>`,
+  remind:`<div class="modal-bg" onclick="closeM()"><div class="modal" style="max-width:400px" onclick="event.stopPropagation()">
+    <div class="modal-hd"><div class="modal-title">Send reminder -- INV-0084</div><button class="btn btn-g btn-sm" onclick="closeM()">x</button></div>
+    <div class="fg"><label>Channel</label><select><option>SMS (Termii)</option><option>WhatsApp (Termii)</option><option>Email</option></select></div>
+    <div class="fg"><label>Message</label><textarea rows="4" style="resize:vertical">Dear EKO Hospital, invoice INV-0084 for N144,000 is 1 day overdue. Please settle urgently to avoid a delivery hold. Pay here: [payment link]</textarea></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end"><button class="btn btn-g" onclick="closeM()">Cancel</button><button class="btn btn-p">Send now</button></div>
+  </div></div>`,
+  sendreport:`<div class="modal-bg" onclick="closeM()"><div class="modal" style="max-width:400px" onclick="event.stopPropagation()">
+    <div class="modal-hd"><div class="modal-title">Share supply continuity score</div><button class="btn btn-g btn-sm" onclick="closeM()">x</button></div>
+    <div class="alert alert-g" style="margin-bottom:12px;font-size:12px">This sends the hospital their supply streak as a branded WhatsApp message -- great for the COO to share internally or with peers.</div>
+    <div class="fg"><label>Message preview</label><textarea rows="5" style="resize:vertical">Dear Chioma, great news! Reddington Hospital has achieved 247 consecutive days of zero missed oxygen deliveries with Oxyrious. Your supply continuity score puts you in the top 10% of our clients. Keep it up! -- Oxyrious team</textarea></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end"><button class="btn btn-g" onclick="closeM()">Cancel</button><button class="btn btn-p">Send via WhatsApp</button></div>
+  </div></div>`,
+};
+
+const PAGES={
+  dashboard:{title:'Dashboard',sub:'Welcome back, Admin',fn:dashPage},
+  orders:{title:'Orders',sub:'Create and manage gas deliveries',fn:ordersPage},
+  clients:{title:'Hospitals',sub:'Client accounts and payment configuration',fn:clientsPage},
+  inventory:{title:'Inventory',sub:'Stock levels and gas products',fn:invPage},
+  logistics:{title:'Logistics',sub:'Transporters and active deliveries',fn:logPage},
+  receivables:{title:'Receivables',sub:'Invoices, reminders and collections',fn:recPage},
+  growth:{title:'Growth Hub',sub:'PLG engine -- nudges, scores, actions',fn:growthPage},
+  referrals:{title:'Referral Programme',sub:'Track referrals, codes, and wallet rewards',fn:referralsPage},
+  reports:{title:'Supply Reports',sub:'Auto-generated monthly reports for hospital COOs',fn:reportsPage},
+};
+
+function render(){
+  const p=PAGES[pg];
+  document.getElementById('pg-title').textContent=p.title;
+  document.getElementById('pg-sub').textContent=p.sub;
+  document.getElementById('content').innerHTML=p.fn();
+  document.querySelectorAll('.nav-item').forEach(el=>el.classList.remove('active'));
+  const n=document.getElementById('nav-'+pg);
+  if(n)n.classList.add('active');
+}
+
+function go(p){pg=p;sC=null;sR=null;render()}
+function setOF(f){oF=f;render()}
+function setCF(f){cF=f;render()}
+function setRT(t){rT=t;render()}
+function setSC(id){sC=id?H.find(h=>h.id===id):null;render()}
+function setSR(id){sR=id?R.find(r=>r.id===id):null;render()}
+function setRefTab(t){refTab=t;render()}
+function setRpHosp(id){rpHosp=parseInt(id);render()}
+function openM(m){document.getElementById('modals').innerHTML=MODALS[m]||''}
+function closeM(){document.getElementById('modals').innerHTML=''}
+
+render();
+</script>
+</body>
+</html>
