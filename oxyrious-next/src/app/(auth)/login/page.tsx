@@ -32,17 +32,15 @@ function LoginForm() {
         return;
       }
 
-      // Fetch session to determine role-based redirect
-      const sessionRes = await fetch("/api/auth/session");
-      const session = await sessionRes.json();
-      const role = session?.user?.role;
-
       if (callbackUrl) {
         window.location.href = callbackUrl;
-      } else if (role === "HOSPITAL") {
-        window.location.href = "/portal";
       } else {
-        window.location.href = "/dashboard";
+        // Fetch session to determine role-based redirect
+        const sessionRes = await fetch("/api/auth/session");
+        const session = await sessionRes.json();
+        const role = session?.user?.role;
+
+        window.location.href = role === "HOSPITAL" ? "/portal" : "/dashboard";
       }
     } catch {
       setLoading(false);
