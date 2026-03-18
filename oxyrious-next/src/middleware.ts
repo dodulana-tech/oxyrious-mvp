@@ -1,9 +1,12 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { auth } from "@/lib/auth";
+import { getToken } from "next-auth/jwt";
 
-export default auth((request) => {
-  const token = request.auth;
+export async function middleware(request: NextRequest) {
+  const token = await getToken({
+    req: request,
+    secret: process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET,
+  });
   const { pathname } = request.nextUrl;
 
   // Allow public routes and static assets
@@ -31,7 +34,7 @@ export default auth((request) => {
     return NextResponse.redirect(loginUrl);
   }
 
-  const role = token.user?.role as string | undefined;
+  const role = token.role as string | undefined;
 
   // Hospital portal: require HOSPITAL role
   if (pathname.startsWith("/portal") || pathname.startsWith("/api/hospital/")) {
@@ -50,7 +53,7 @@ export default auth((request) => {
 
   // All other routes (including /api/*) — allow any authenticated user
   return NextResponse.next();
-});
+}
 
 export const config = {
   matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
