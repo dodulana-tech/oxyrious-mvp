@@ -236,6 +236,13 @@ export async function POST(req: NextRequest) {
 
     const { buffer, filename, hospital, metrics } = await generatePdfBuffer(hospitalId);
 
+    // Look up a user with HOSPITAL role linked to this hospital for their email
+    const hospitalUser = await prisma.user.findFirst({
+      where: { hospitalId, role: "HOSPITAL" },
+      select: { email: true },
+    });
+    const recipientEmail = hospitalUser?.email || session.user?.email || "noreply@oxyrious.com";
+
     if (channel === "EMAIL") {
       const monthYear = new Date().toLocaleString("en-US", { month: "long", year: "numeric" });
       const subject = `Oxyrious Monthly Supply Report \u2014 ${hospital.name} \u2014 ${monthYear}`;
@@ -257,7 +264,7 @@ export async function POST(req: NextRequest) {
         </div>
       `;
 
-      const emailResult = await sendEmail(hospital.contact, subject, html, [
+      const emailResult = await sendEmail(recipientEmail, subject, html, [
         { filename, content: buffer },
       ]);
 
@@ -265,7 +272,7 @@ export async function POST(req: NextRequest) {
         data: {
           hospitalId,
           channel: "EMAIL",
-          recipient: hospital.contact,
+          recipient: recipientEmail,
           message: subject,
           status: emailResult.status,
           reference: emailResult.id || null,
