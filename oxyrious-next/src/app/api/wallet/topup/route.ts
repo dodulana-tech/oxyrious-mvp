@@ -34,10 +34,15 @@ export async function POST(req: NextRequest) {
     // Use the logged-in user's email for Paystack (hospital.contact is a name, not email)
     const email = session.user?.email || "customer@oxyrious.com";
 
+    // Build callback URL to redirect user back after payment
+    const origin = req.nextUrl.origin;
+    const callbackUrl = `${origin}/portal/wallet?verify=${encodeURIComponent("pending")}`;
+
     const { authorization_url, reference } = await initializeTransaction(
       email,
       amountInKobo,
       { hospitalId },
+      callbackUrl,
     );
 
     // Log a PENDING wallet transaction

@@ -51,10 +51,11 @@ export async function initializeTransaction(
   email: string,
   amount: number,
   metadata: object,
+  callbackUrl?: string,
 ): Promise<{ authorization_url: string; reference: string }> {
   const res = await paystackFetch<InitializeResponse>("/transaction/initialize", {
     method: "POST",
-    body: JSON.stringify({ email, amount, metadata }),
+    body: JSON.stringify({ email, amount, metadata, ...(callbackUrl ? { callback_url: callbackUrl } : {}) }),
   });
 
   return {

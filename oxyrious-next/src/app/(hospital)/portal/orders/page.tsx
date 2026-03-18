@@ -51,6 +51,8 @@ export default function HospitalOrdersPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [cancelId, setCancelId] = useState<string | null>(null);
+  const [cancelling, setCancelling] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -115,6 +117,27 @@ export default function HospitalOrdersPage() {
     }
   };
 
+  const cancelOrder = async () => {
+    if (!cancelId) return;
+    setCancelling(true);
+    try {
+      const res = await fetch(`/api/orders/${cancelId}/cancel`, { method: "POST" });
+      if (res.ok) {
+        setOrders((prev) => prev.filter((o) => o.id !== cancelId));
+        setCancelId(null);
+      } else {
+        const data = await res.json();
+        setError(data.error || "Failed to cancel order");
+        setCancelId(null);
+      }
+    } catch {
+      setError("Network error. Please try again.");
+      setCancelId(null);
+    } finally {
+      setCancelling(false);
+    }
+  };
+
   return (
     <>
       <Header title="My Orders" subtitle="View and place orders for medical gases" />
@@ -140,12 +163,13 @@ export default function HospitalOrdersPage() {
                 <Th>Status</Th>
                 <Th>Payment</Th>
                 <Th>Date</Th>
+                <Th>Actions</Th>
               </tr>
             </thead>
             <tbody>
               {filtered.length === 0 ? (
                 <Tr>
-                  <Td colSpan={6} className="text-center text-text-muted py-6">
+                  <Td colSpan={7} className="text-center text-text-muted py-6">
                     No orders found
                   </Td>
                 </Tr>
@@ -176,6 +200,17 @@ export default function HospitalOrdersPage() {
                         month: "short",
                         year: "numeric",
                       })}
+                    </Td>
+                    <Td>
+                      {o.status === "PENDING" && (
+                        <Btn
+                          variant="danger"
+                          size="sm"
+                          onClick={() => setCancelId(o.id)}
+                        >
+                          Cancel
+                        </Btn>
+                      )}
                     </Td>
                   </Tr>
                 ))
@@ -238,6 +273,23 @@ export default function HospitalOrdersPage() {
               disabled={!newOrder.gasId || orderTotal === 0 || submitting}
             >
               {submitting ? "Placing..." : "Place Order"}
+            </Btn>
+          </div>
+        </Modal>
+
+        {/* Cancel Confirmation Modal */}
+        <Modal open={!!cancelId} onClose={() => setCancelId(null)} title="Cancel Order">
+          <p className="text-text-muted text-[13px] mb-4">
+            Are you sure you want to cancel order{" "}
+            <span className="font-bold text-brand">{cancelId}</span>? This
+            action cannot be undone.
+          </p>
+          <div className="flex gap-2 justify-end">
+            <Btn variant="ghost" onClick={() => setCancelId(null)} disabled={cancelling}>
+              No, Keep It
+            </Btn>
+            <Btn variant="danger" onClick={cancelOrder} disabled={cancelling}>
+              {cancelling ? "Cancelling..." : "Yes, Cancel Order"}
             </Btn>
           </div>
         </Modal>

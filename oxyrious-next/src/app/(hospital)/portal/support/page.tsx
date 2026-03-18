@@ -133,16 +133,29 @@ export default function SupportPage() {
     }
   }
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    // TODO: wire up to API
-    setSubmitted(true);
-    setTopic("");
-    setSubject("");
-    setMessage("");
-    setPriority("medium");
-    setOrderRef("");
-    setTimeout(() => setSubmitted(false), 5000);
+    try {
+      const res = await fetch("/api/hospital/support", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ topic, subject, message, priority, orderRef: orderRef || undefined }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        alert(data.error || "Failed to send message");
+        return;
+      }
+      setSubmitted(true);
+      setTopic("");
+      setSubject("");
+      setMessage("");
+      setPriority("medium");
+      setOrderRef("");
+      setTimeout(() => setSubmitted(false), 5000);
+    } catch {
+      alert("Something went wrong. Please try again.");
+    }
   }
 
   const selectedPriority = PRIORITIES.find((p) => p.value === priority)!;
