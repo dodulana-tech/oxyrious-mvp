@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { Header } from "@/components/layout/header";
 import { MetricCard, Card } from "@/components/ui/card";
 import { Btn } from "@/components/ui/button";
@@ -35,13 +36,15 @@ const typeBadge: Record<string, { color: "green" | "red" | "blue" | "purple" | "
   REFERRAL_REWARD: { color: "purple", label: "Reward" },
 };
 
-export default function HospitalWalletPage() {
+function WalletPageInner() {
+  const searchParams = useSearchParams();
   const [data, setData] = useState<WalletData | null>(null);
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
   const [amount, setAmount] = useState("");
   const [topupLoading, setTopupLoading] = useState(false);
   const [error, setError] = useState("");
+  const [verifySuccess, setVerifySuccess] = useState(false);
 
   const fetchWallet = () => {
     fetch("/api/hospital/wallet")
@@ -55,7 +58,30 @@ export default function HospitalWalletPage() {
 
   useEffect(() => {
     fetchWallet();
-  }, []);
+
+    // Auto-verify payment if returning from Paystack
+    const reference = searchParams.get("reference") || searchParams.get("trxref");
+    if (reference) {
+      fetch("/api/wallet/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reference }),
+      })
+        .then((r) => r.json())
+        .then((result) => {
+          if (result.status === "success") {
+            setVerifySuccess(true);
+            setTimeout(() => setVerifySuccess(false), 6000);
+          }
+          fetchWallet();
+          // Clean up URL params
+          window.history.replaceState({}, "", "/portal/wallet");
+        })
+        .catch(() => {
+          fetchWallet();
+        });
+    }
+  }, [searchParams]);
 
   const handleTopup = async () => {
     const amountNum = parseFloat(amount);
@@ -117,6 +143,11 @@ export default function HospitalWalletPage() {
     <>
       <Header title="Wallet" subtitle="Manage your wallet balance and transactions" />
       <div className="p-5 flex-1 space-y-4">
+        {verifySuccess && (
+          <Alert variant="green">
+            <span><strong>Payment successful!</strong> Your wallet balance has been updated.</span>
+          </Alert>
+        )}
         {/* Balance cards */}
         <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
           <MetricCard
@@ -252,5 +283,13 @@ export default function HospitalWalletPage() {
         </Modal>
       </div>
     </>
+  );
+}
+
+export default function HospitalWalletPage() {
+  return (
+    <Suspense fallback={<div className="p-5 text-text-muted text-sm">Loading wallet...</div>}>
+      <WalletPageInner />
+    </Suspense>
   );
 }
