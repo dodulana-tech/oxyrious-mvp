@@ -31,8 +31,11 @@ export async function POST(req: NextRequest) {
     // Paystack expects amount in kobo (1 NGN = 100 kobo)
     const amountInKobo = Math.round(amount * 100);
 
+    // Use the logged-in user's email for Paystack (hospital.contact is a name, not email)
+    const email = session.user?.email || "customer@oxyrious.com";
+
     const { authorization_url, reference } = await initializeTransaction(
-      hospital.contact, // hospital contact email
+      email,
       amountInKobo,
       { hospitalId },
     );

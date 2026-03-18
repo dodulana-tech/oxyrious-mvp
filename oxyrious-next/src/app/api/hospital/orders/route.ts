@@ -62,14 +62,14 @@ export async function POST(req: NextRequest) {
 
     const paymentMode = hospital.paymentMode;
 
-    // Generate order ID
-    const lastOrder = await prisma.order.findFirst({ orderBy: { createdAt: "desc" } });
-    let nextNum = 1;
-    if (lastOrder) {
-      const match = lastOrder.id.match(/ORD-(\d+)/);
-      if (match) nextNum = parseInt(match[1], 10) + 1;
+    // Generate order ID — find the highest existing number
+    const allOrders = await prisma.order.findMany({ select: { id: true } });
+    let maxNum = 0;
+    for (const o of allOrders) {
+      const match = o.id.match(/ORD-(\d+)/);
+      if (match) maxNum = Math.max(maxNum, parseInt(match[1], 10));
     }
-    const orderId = `ORD-${String(nextNum).padStart(4, "0")}`;
+    const orderId = `ORD-${String(maxNum + 1).padStart(4, "0")}`;
 
     // Apply hospital markup to each item's price: effectivePrice = gas.price * (1 + markup/100)
     const pricedItems = await Promise.all(
@@ -114,13 +114,13 @@ export async function POST(req: NextRequest) {
 
       // Auto-generate receivable for CREDIT/TRANSFER
       if (paymentMode === "CREDIT" || paymentMode === "TRANSFER") {
-        const lastInv = await tx.receivable.findFirst({ orderBy: { createdAt: "desc" } });
-        let invNum = 1;
-        if (lastInv) {
-          const match = lastInv.id.match(/INV-(\d+)/);
-          if (match) invNum = parseInt(match[1], 10) + 1;
+        const allInvs = await tx.receivable.findMany({ select: { id: true } });
+        let maxInvNum = 0;
+        for (const inv of allInvs) {
+          const match = inv.id.match(/INV-(\d+)/);
+          if (match) maxInvNum = Math.max(maxInvNum, parseInt(match[1], 10));
         }
-        const receivableId = `INV-${String(invNum).padStart(4, "0")}`;
+        const receivableId = `INV-${String(maxInvNum + 1).padStart(4, "0")}`;
         const dueDate = new Date();
         dueDate.setDate(dueDate.getDate() + (paymentMode === "CREDIT" ? 30 : 7));
 
